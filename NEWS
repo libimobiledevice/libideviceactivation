@@ -1,0 +1,22 @@
+Version 0.9.0
+~~~~~~~~~~~~~
+
+* Changes:
+  - Refactor interface to allow handling forms
+  - BuddyML and HTML parsing support
+  - Minor fixes
+
+Version 0.5.0
+~~~~~~~~~~~~~
+
+* Changes:
+  - Add debug level setter to enable verbose curl debugging
+  - Minor fixes
+
+Version 0.1.0
+~~~~~~~~~~~~~
+
+* Changes:
+  - Implement basic API to interact with activation webservice
+  - Add basic ideviceactivation tool
+  - Setup build system

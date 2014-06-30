@@ -1,0 +1,65 @@
+About
+=====
+
+A library to manage the activation process of Apple iOS devices.
+
+Requirements
+============
+
+Development Packages of:
+	libcurl
+	libxml2
+	libplist
+	libimobiledevice
+
+Software:
+	usbmuxd
+	make
+	autoheader
+	automake
+	autoconf
+	libtool
+	pkg-config
+	gcc
+
+Installation
+============
+
+To compile run:
+	./autogen.sh
+	make
+	sudo make install
+
+Who/What/Where?
+===============
+
+Home:
+	http://www.libimobiledevice.org/
+
+Code:
+	git clone http://git.sukimashita.com/libideviceactivation.git
+
+Code (Mirror):
+	git clone https://github.com/libimobiledevice/libideviceactivation.git
+
+Tickets:
+	http://github.com/libimobiledevice/libideviceactivation/issues
+
+Mailing List:
+	http://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
+
+IRC:
+	irc://irc.freenode.net#libimobiledevice
+
+Credits
+=======
+
+Inspired by the activation utility from Joshua Hill (p0sixninja):
+https://github.com/posixninja/ideviceactivate/
+
+Apple, iPhone, iPod, and iPod Touch are trademarks of Apple Inc.
+libimobiledevice is an independent software library and has not been
+authorized, sponsored, or otherwise approved by Apple Inc.
+
+README Updated on:
+	2014-06-05

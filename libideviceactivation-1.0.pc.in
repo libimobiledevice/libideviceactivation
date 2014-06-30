@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libideviceactivation
+Description: A library to handle activation of iDevices.
+Version: @VERSION@
+Requires: libplist >= @LIBPLIST_VERSION@ libimobiledevice-1.0 >= @LIBIMOBILEDEVICE_VERSION@ libcurl >= @LIBCURL_VERSION@ libxml-2.0 >= @LIBXML2_VERSION@
+Libs: -L${libdir} -lideviceactivation
+Cflags: -I${includedir}
+
