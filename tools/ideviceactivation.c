@@ -42,6 +42,7 @@ static void print_usage(int argc, char **argv)
 	printf("\nThe following OPTIONS are accepted:\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
 	printf("  -u, --udid UDID\ttarget specific device by its 40-digit device UDID\n");
+	printf("  -s, --service URL\tuse signing service at URL instead of default\n");
 	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
 }
@@ -62,6 +63,7 @@ int main(int argc, char *argv[])
 	plist_dict_iter iter = NULL;
 	plist_t record = NULL;
 	char *udid = NULL;
+	char *signing_service_url = NULL;
 	int i;
 	int result = EXIT_FAILURE;
 
@@ -84,6 +86,15 @@ int main(int argc, char *argv[])
 				return EXIT_FAILURE;
 			}
 			udid = argv[i];
+			continue;
+		}
+		else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--service")) {
+			i++;
+			if (!argv[i]) {
+				print_usage(argc, argv);
+				return EXIT_FAILURE;
+			}
+			signing_service_url = argv[i];
 			continue;
 		}
 		else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
@@ -150,6 +161,10 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "Failed to create activation request.\n");
 				result = EXIT_FAILURE;
 				goto cleanup;
+			}
+
+			if (request && signing_service_url) {
+				idevice_activation_request_set_url(request, signing_service_url);
 			}
 
 			while(1) {
