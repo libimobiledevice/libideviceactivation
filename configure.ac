@@ -15,7 +15,7 @@ dnl libtool versioning
 #                 changes to the signature and the semantic)
 #  ? :+1 : ?   == just internal changes
 # CURRENT : REVISION : AGE
-LIBIDEVICEACTIVATION_SO_VERSION=2:0:0
+LIBIDEVICEACTIVATION_SO_VERSION=2:1:0
 
 dnl Minimum package versions
 LIBIMOBILEDEVICE_VERSION=1.1.4
