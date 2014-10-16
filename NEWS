@@ -1,3 +1,12 @@
+Version 1.0.0
+~~~~~~~~~~~~~
+
+* Changes:
+  - Add basic man page for ideviceactivation tool
+  - Avoid exporting-non-public symbols
+  - Add "--version" argument to print version number in ideviceactivation tool
+  - Add "--service" argument to allow setting custom activaton service URL
+
 Version 0.9.0
 ~~~~~~~~~~~~~
 
