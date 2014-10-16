@@ -72,6 +72,7 @@ src/Makefile
 include/Makefile
 tools/Makefile
 libideviceactivation-1.0.pc
+man/Makefile
 ])
 
 echo "

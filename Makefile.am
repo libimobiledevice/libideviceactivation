@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = src include tools
+SUBDIRS = src include tools man
 
 DISTCHECK_CONFIGURE_FLAGS =
 

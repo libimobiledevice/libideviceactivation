@@ -1,0 +1,46 @@
+.TH "ideviceactivation" 1
+.SH NAME
+ideviceactivation \- Activate or deactivate an iOS device.
+.SH SYNOPSIS
+.B ideviceactivation
+activate [OPTIONS]
+
+.B ideviceactivation
+deactivate [OPTIONS]
+
+.SH DESCRIPTION
+
+Allows to activate and deactivate iOS devices by talking to Apple's webservice.
+
+If the activation process uses forms, input will be requested from the user.
+
+.SH OPTIONS
+.TP
+.B \-d, \-\-debug
+Enable communication debugging.
+.TP
+.B \-u, \-\-udid UDID
+Target specific device by its 40-digit device UDID.
+.TP
+.B \-h, \-\-help
+Prints usage information.
+.TP
+.B \-s, \-\-service URL
+Use activation webservice at URL instead of default.
+
+.SH COMMANDS
+.TP
+.B activate
+Attempt to activate the device.
+.TP
+.B deactivate
+Deactivates the device.
+
+.SH AUTHOR
+This manual page was written by Martin Szulecki.
+
+.SH SEE ALSO
+
+http://www.libimobiledevice.org
+
+https://github.com/libimobiledevice/libideviceactivation/
