@@ -1,4 +1,11 @@
+*.[oa]
+*~
+*.po
+*.lo
+*.la
 .*.swp
+*/.deps/*
+*.patch
 Makefile
 Makefile.in
 aclocal.m4
@@ -18,10 +25,7 @@ libtool
 ltmain.sh
 m4
 missing
-src/.deps
 src/.libs
-src/*.o
-src/*.lo
-src/*.la
+tools/.libs
+tools/ideviceactivation
 stamp-h1
-
