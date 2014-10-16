@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: libideviceactivation
-Description: A library to handle activation of iDevices.
+Description: A library to handle activation and deactivation of iOS devices.
 Version: @VERSION@
 Requires: libplist >= @LIBPLIST_VERSION@ libimobiledevice-1.0 >= @LIBIMOBILEDEVICE_VERSION@ libcurl >= @LIBCURL_VERSION@ libxml-2.0 >= @LIBXML2_VERSION@
 Libs: -L${libdir} -lideviceactivation
