@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +47,7 @@ static void print_usage(int argc, char **argv)
 	printf("  -d, --debug\t\tenable communication debugging\n");
 	printf("  -u, --udid UDID\ttarget specific device by its 40-digit device UDID\n");
 	printf("  -s, --service URL\tuse activation webservice at URL instead of default\n");
+	printf("  -v, --version\t\tprint version information and exit\n");
 	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
 }
@@ -99,6 +104,10 @@ int main(int argc, char *argv[])
 		}
 		else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
 			print_usage(argc, argv);
+			return EXIT_SUCCESS;
+		}
+		else if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
+			printf("ideviceactivation %s\n", PACKAGE_VERSION);
 			return EXIT_SUCCESS;
 		}
 		else if (!strcmp(argv[i], "activate")) {
