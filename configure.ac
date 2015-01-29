@@ -69,9 +69,9 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 AC_OUTPUT([
 Makefile
 src/Makefile
+src/libideviceactivation-1.0.pc
 include/Makefile
 tools/Makefile
-libideviceactivation-1.0.pc
 man/Makefile
 ])
 

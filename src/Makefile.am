@@ -8,3 +8,5 @@ libideviceactivation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBIDEVICEACTIVA
 libideviceactivation_la_SOURCES = \
 		activation.c
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libideviceactivation-1.0.pc
