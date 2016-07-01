@@ -135,7 +135,7 @@ static idevice_activation_error_t idevice_activation_parse_buddyml_response(idev
 	xmlXPathObjectPtr xpath_result = NULL;
 	int i = 0;
 
-	if (!response->content_type == IDEVICE_ACTIVATION_CONTENT_TYPE_BUDDYML)
+	if (response->content_type != IDEVICE_ACTIVATION_CONTENT_TYPE_BUDDYML)
 		return IDEVICE_ACTIVATION_E_UNKNOWN_CONTENT_TYPE;
 
 	doc = xmlReadMemory(response->raw_content, response->raw_content_size, "ideviceactivation.xml", NULL, XML_PARSE_NOERROR);
@@ -341,7 +341,7 @@ static idevice_activation_error_t idevice_activation_parse_html_response(idevice
 	xmlXPathContextPtr context = NULL;
 	xmlXPathObjectPtr xpath_result = NULL;
 
-	if (!response->content_type == IDEVICE_ACTIVATION_CONTENT_TYPE_HTML)
+	if (response->content_type != IDEVICE_ACTIVATION_CONTENT_TYPE_HTML)
 		return IDEVICE_ACTIVATION_E_UNKNOWN_CONTENT_TYPE;
 
 	doc = xmlReadMemory(response->raw_content, response->raw_content_size, "ideviceactivation.xml", NULL, XML_PARSE_RECOVER | XML_PARSE_NOERROR);
