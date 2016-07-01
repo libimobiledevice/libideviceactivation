@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 				}
 
 				if (idevice_activation_response_has_errors(response)) {
-					fprintf(stderr, "Activation server repors errors.\n");
+					fprintf(stderr, "Activation server reports errors.\n");
 
 					idevice_activation_response_get_title(response, &response_title);
 					if (response_title) {
