@@ -31,6 +31,7 @@
 #include <plist/plist.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/libimobiledevice.h>
+#include <libimobiledevice/mobileactivation.h>
 #include <libideviceactivation.h>
 
 static void print_usage(int argc, char **argv)
@@ -58,6 +59,7 @@ int main(int argc, char *argv[])
 	idevice_t device = NULL;
 	idevice_error_t ret = IDEVICE_E_UNKNOWN_ERROR;
 	lockdownd_client_t lockdown = NULL;
+	mobileactivation_client_t ma = NULL;
 	idevice_activation_request_t request = NULL;
 	idevice_activation_response_t response = NULL;
 	const char* response_title = NULL;
@@ -70,6 +72,7 @@ int main(int argc, char *argv[])
 	plist_t record = NULL;
 	char *udid = NULL;
 	char *signing_service_url = NULL;
+	int use_mobileactivation = 0;
 	int i;
 	int result = EXIT_FAILURE;
 
@@ -151,13 +154,38 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
+	// check if we should use the new mobileactivation service
+	lockdownd_service_descriptor_t svc = NULL;
+	if (lockdownd_start_service(lockdown, MOBILEACTIVATION_SERVICE_NAME, &svc) == LOCKDOWN_E_SUCCESS) {
+		mobileactivation_error_t maerr = mobileactivation_client_new(device, svc, &ma);
+		lockdownd_service_descriptor_free(svc);
+		svc = NULL;
+		if (maerr != MOBILEACTIVATION_E_SUCCESS) {
+			fprintf(stderr, "Failed to connect to %s\n", MOBILEACTIVATION_SERVICE_NAME);
+			result = EXIT_FAILURE;
+			goto cleanup;
+		}
+		use_mobileactivation = 1;
+	}
+
 	switch (op) {
 		case OP_DEACTIVATE:
-			// deactivate device using lockdown
-			if (LOCKDOWN_E_SUCCESS != lockdownd_deactivate(lockdown)) {
-				fprintf(stderr, "Failed to deactivate device.\n");
-				result = EXIT_FAILURE;
-				goto cleanup;
+			if (use_mobileactivation) {
+				// deactivate device using mobileactivation
+				if (MOBILEACTIVATION_E_SUCCESS != mobileactivation_deactivate(ma)) {
+					fprintf(stderr, "Failed to deactivate device.\n");
+					result = EXIT_FAILURE;
+					goto cleanup;
+				}
+				mobileactivation_client_free(ma);
+				ma = NULL;
+			} else {
+				// deactivate device using lockdown
+				if (LOCKDOWN_E_SUCCESS != lockdownd_deactivate(lockdown)) {
+					fprintf(stderr, "Failed to deactivate device.\n");
+					result = EXIT_FAILURE;
+					goto cleanup;
+				}
 			}
 
 			result = EXIT_SUCCESS;
@@ -165,12 +193,37 @@ int main(int argc, char *argv[])
 			break;
 		case OP_ACTIVATE:
 		default:
-			// create activation request
-			if (idevice_activation_request_new_from_lockdownd(
-				IDEVICE_ACTIVATION_CLIENT_MOBILE_ACTIVATION, lockdown, &request) != IDEVICE_ACTIVATION_E_SUCCESS) {
-				fprintf(stderr, "Failed to create activation request.\n");
-				result = EXIT_FAILURE;
-				goto cleanup;
+			if (use_mobileactivation) {
+				// create activation request from mobileactivation
+				plist_t ainfo = NULL;
+
+				if ((mobileactivation_create_activation_info(ma, &ainfo) != MOBILEACTIVATION_E_SUCCESS) || !ainfo || (plist_get_node_type(ainfo) != PLIST_DICT)) {
+					fprintf(stderr, "Failed to get ActivationInfo from mobileactivation\n");
+					result = EXIT_FAILURE;
+					goto cleanup;
+				}
+
+				if (idevice_activation_request_new(IDEVICE_ACTIVATION_CLIENT_MOBILE_ACTIVATION, &request) != IDEVICE_ACTIVATION_E_SUCCESS) {
+					fprintf(stderr, "Failed to create activation request.\n");
+					result = EXIT_FAILURE;
+					goto cleanup;
+				}
+
+				plist_t request_fields = plist_new_dict();
+				plist_dict_set_item(request_fields, "activation-info", ainfo);
+
+				idevice_activation_request_set_fields(request, request_fields);
+
+				mobileactivation_client_free(ma);
+				ma = NULL;
+			} else {
+				// create activation request from lockdown
+				if (idevice_activation_request_new_from_lockdownd(
+					IDEVICE_ACTIVATION_CLIENT_MOBILE_ACTIVATION, lockdown, &request) != IDEVICE_ACTIVATION_E_SUCCESS) {
+					fprintf(stderr, "Failed to create activation request.\n");
+					result = EXIT_FAILURE;
+					goto cleanup;
+				}
 			}
 
 			if (request && signing_service_url) {
@@ -211,11 +264,30 @@ int main(int argc, char *argv[])
 				idevice_activation_response_get_activation_record(response, &record);
 
 				if (record) {
-					// activate device using lockdown
-					if (LOCKDOWN_E_SUCCESS != lockdownd_activate(lockdown, record)) {
-						fprintf(stderr, "Failed to activate device with record.\n");
-						result = EXIT_FAILURE;
-						goto cleanup;
+					if (use_mobileactivation) {
+						svc = NULL;
+						if (lockdownd_start_service(lockdown, MOBILEACTIVATION_SERVICE_NAME, &svc) == LOCKDOWN_E_SUCCESS) {
+							mobileactivation_error_t maerr = mobileactivation_client_new(device, svc, &ma);
+							lockdownd_service_descriptor_free(svc);
+							if (maerr != MOBILEACTIVATION_E_SUCCESS) {
+								fprintf(stderr, "Failed to connect to %s\n", MOBILEACTIVATION_SERVICE_NAME);
+								result = EXIT_FAILURE;
+								goto cleanup;
+							}
+						}
+
+						if (MOBILEACTIVATION_E_SUCCESS != mobileactivation_activate(ma, record)) {
+							fprintf(stderr, "Failed to activate device with record.\n");
+							result = EXIT_FAILURE;
+							goto cleanup;
+						}
+					} else {
+						// activate device using lockdown
+						if (LOCKDOWN_E_SUCCESS != lockdownd_activate(lockdown, record)) {
+							fprintf(stderr, "Failed to activate device with record.\n");
+							result = EXIT_FAILURE;
+							goto cleanup;
+						}
 					}
 
 					// set ActivationStateAcknowledged if we succeeded
@@ -311,6 +383,9 @@ cleanup:
 
 	if (record)
 		plist_free(record);
+
+	if (ma)
+		mobileactivation_client_free(ma);
 
 	if (lockdown)
 		lockdownd_client_free(lockdown);
