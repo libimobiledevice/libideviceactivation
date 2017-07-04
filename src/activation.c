@@ -543,8 +543,9 @@ static size_t idevice_activation_write_callback(char* data, size_t size, size_t 
 	const size_t total = size * nmemb;
 
 	if (total != 0) {
-		response->raw_content = realloc(response->raw_content, response->raw_content_size + total);
+		response->raw_content = realloc(response->raw_content, response->raw_content_size + total + 1);
 		memcpy(response->raw_content + response->raw_content_size, data, total);
+		response->raw_content[response->raw_content_size + total] = '\0';
 		response->raw_content_size += total;
 	}
 
