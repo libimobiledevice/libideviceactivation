@@ -56,6 +56,24 @@ AC_TYPE_UINT8_T
 # Checks for library functions.
 AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
 
+# Check for operating system
+AC_MSG_CHECKING([wether we need platform-specific build settings for ${host_os}])
+case ${host_os} in
+  *mingw32*|*cygwin*)
+    AC_MSG_RESULT([yes])
+    win32=true
+    ;;
+  darwin*|*android*)
+    AC_MSG_RESULT([no])
+    ;;
+  *)
+    AC_MSG_RESULT([yes])
+    AX_PTHREAD([], [AC_MSG_ERROR([pthread is required to build ${PACKAGE}])])
+    AC_CHECK_LIB(pthread, [pthread_once], [], [AC_MSG_ERROR([pthread with pthread_once required to build ${PACKAGE}])])
+    ;;
+esac
+AM_CONDITIONAL(WIN32, test x$win32 = xtrue)
+
 AS_COMPILER_FLAGS(GLOBAL_CFLAGS, "-Wall -Wextra -Wmissing-declarations -Wredundant-decls -Wshadow -Wpointer-arith  -Wwrite-strings -Wswitch-default -Wno-unused-parameter -fsigned-char -fvisibility=hidden")
 AC_SUBST(GLOBAL_CFLAGS)
 

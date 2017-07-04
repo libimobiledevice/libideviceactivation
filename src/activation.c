@@ -40,6 +40,12 @@
 #endif
 #endif
 
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
+
 #include <libideviceactivation.h>
 
 #define IDEVICE_ACTIVATION_USER_AGENT_IOS "iOS Device Activator (MobileActivation-20 built on Jan 15 2012 at 19:07:28)"
@@ -77,7 +83,73 @@ struct idevice_activation_response_private {
 	int has_errors;
 };
 
-int debug_level = 0;
+
+static void internal_libideviceactivation_init(void)
+{
+	curl_global_init(CURL_GLOBAL_ALL);
+}
+
+static void internal_libideviceactivation_deinit(void)
+{
+	curl_global_cleanup();
+}
+
+#ifdef WIN32
+
+typedef volatile struct {
+    LONG lock;
+    int state;
+} thread_once_t;
+
+static thread_once_t init_once = {0, 0};
+static thread_once_t deinit_once = {0, 0};
+
+void thread_once(thread_once_t *once_control, void (*init_routine)(void))
+{
+    while (InterlockedExchange(&(once_control->lock), 1) != 0) {
+        Sleep(1);
+    }
+    if (!once_control->state) {
+        once_control->state = 1;
+        init_routine();
+    }
+    InterlockedExchange(&(once_control->lock), 0);
+}
+
+BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved)
+{
+    switch (dwReason) {
+    case DLL_PROCESS_ATTACH:
+        thread_once(&init_once, internal_libideviceactivation_init);
+        break;
+    case DLL_PROCESS_DETACH:
+        thread_once(&deinit_once, internal_libideviceactivation_deinit);
+        break;
+    default:
+        break;
+    }
+    return 1;
+}
+
+#else
+
+static pthread_once_t init_once = PTHREAD_ONCE_INIT;
+static pthread_once_t deinit_once = PTHREAD_ONCE_INIT;
+
+static void __attribute__((constructor)) libideviceactivation_initialize(void)
+{
+    pthread_once(&init_once, internal_libideviceactivation_init);
+}
+
+static void __attribute__((destructor)) libideviceactivation_deinitialize(void)
+{
+    pthread_once(&deinit_once, internal_libideviceactivation_deinit);
+}
+
+#endif
+
+
+static int debug_level = 0;
 
 IDEVICE_ACTIVATION_API void idevice_activation_set_debug_level(int level) {
 	debug_level = level;
@@ -967,7 +1039,6 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 		goto cleanup;
 	}
 
-	curl_global_init(CURL_GLOBAL_ALL);
 	CURL* handle = curl_easy_init();
 	struct curl_httppost* form = NULL;
 
@@ -1104,8 +1175,6 @@ cleanup:
 		curl_formfree(form);
 	if (handle)
 		curl_easy_cleanup(handle);
-
-	curl_global_cleanup();
 
 	return result;
 }
