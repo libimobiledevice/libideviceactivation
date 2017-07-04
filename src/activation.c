@@ -644,6 +644,9 @@ static int plist_strip_xml(char** xmlplist)
 
 IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new(idevice_activation_client_type_t client_type, idevice_activation_request_t* request)
 {
+	if (!request)
+		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
+
 	idevice_activation_request_t tmp_request = (idevice_activation_request_t) malloc(sizeof(idevice_activation_request));
 
 	if (!tmp_request) {
@@ -665,7 +668,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 	uint8_t has_mobile_equipment_id = 0;
 
 	// check arguments
-	if (!lockdown) {
+	if (!lockdown || !request) {
 		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
 	}
 
@@ -793,12 +796,15 @@ IDEVICE_ACTIVATION_API void idevice_activation_request_free(idevice_activation_r
 
 IDEVICE_ACTIVATION_API void idevice_activation_request_get_fields(idevice_activation_request_t request, plist_t* fields)
 {
+	if (!request || !fields)
+		return;
+
 	*fields = plist_copy(request->fields);
 }
 
 IDEVICE_ACTIVATION_API void idevice_activation_request_set_fields(idevice_activation_request_t request, plist_t fields)
 {
-	if (!fields)
+	if (!request || !fields)
 		return;
 
 	if (request->content_type == IDEVICE_ACTIVATION_CONTENT_TYPE_URL_ENCODED) {
@@ -820,6 +826,9 @@ IDEVICE_ACTIVATION_API void idevice_activation_request_set_fields(idevice_activa
 
 IDEVICE_ACTIVATION_API void idevice_activation_request_set_fields_from_response(idevice_activation_request_t request, const idevice_activation_response_t response)
 {
+	if (!request || !response)
+		return;
+
 	plist_t response_fields = NULL;
 	idevice_activation_response_get_fields(response, &response_fields);
 	if (response_fields) {
@@ -830,11 +839,17 @@ IDEVICE_ACTIVATION_API void idevice_activation_request_set_fields_from_response(
 
 IDEVICE_ACTIVATION_API void idevice_activation_request_set_field(idevice_activation_request_t request, const char* key, const char* value)
 {
+	if (!request || !key || !value)
+		return;
+
 	plist_dict_set_item(request->fields, key, plist_new_string(value));
 }
 
 IDEVICE_ACTIVATION_API void idevice_activation_request_get_field(idevice_activation_request_t request, const char* key, char** value)
 {
+	if (!request || !key || !value)
+		return;
+
 	char* tmp_value = NULL;
 
 	plist_t item = plist_dict_get_item(request->fields, key);
@@ -852,20 +867,26 @@ IDEVICE_ACTIVATION_API void idevice_activation_request_get_field(idevice_activat
 
 IDEVICE_ACTIVATION_API void idevice_activation_request_get_url(idevice_activation_request_t request, const char** url)
 {
+	if (!request || !url)
+		return;
+
 	*url = request->url;
 }
 
 IDEVICE_ACTIVATION_API void idevice_activation_request_set_url(idevice_activation_request_t request, const char* url)
 {
-	if (request->url) {
-		free(request->url);
-	}
+	if (!request || !url)
+		return;
 
+	free(request->url);
 	request->url = strdup(url);
 }
 
 IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_new(idevice_activation_response_t* response)
 {
+	if (!response)
+		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
+
 	idevice_activation_response_t tmp_response = (idevice_activation_response_t) malloc(sizeof(idevice_activation_response));
 
 	if (!tmp_response) {
@@ -891,6 +912,9 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_ne
 
 IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_new_from_html(const char* content, idevice_activation_response_t* response)
 {
+	if (!content || !response)
+		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
+
 	idevice_activation_response_t tmp_response = NULL;
 	idevice_activation_error_t result = IDEVICE_ACTIVATION_E_SUCCESS;
 
@@ -926,6 +950,9 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_ne
 
 IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_to_buffer(idevice_activation_response_t response, char** buffer, size_t* size)
 {
+	if (!response || !buffer || !size)
+		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
+
 	char* tmp_buffer = (char*) malloc(sizeof(char) * response->raw_content_size);
 	if (!tmp_buffer) {
 		return IDEVICE_ACTIVATION_E_OUT_OF_MEMORY;
@@ -941,25 +968,23 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_to
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_free(idevice_activation_response_t response)
 {
-	if (response->raw_content)
+	if (response) {
 		free(response->raw_content);
-	if (response->title)
 		free(response->title);
-	if (response->description)
 		free(response->description);
-	if (response->activation_record)
 		plist_free(response->activation_record);
-	if (response->fields)
 		plist_free(response->fields);
-	if (response->fields_require_input)
 		plist_free(response->fields_require_input);
-	if (response->labels)
 		plist_free(response->labels);
-	free(response);
+		free(response);
+	}
 }
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_get_field(idevice_activation_response_t response, const char* key, char** value)
 {
+	if (!response || !key || !value)
+		return;
+
 	*value = NULL;
 	plist_t item = plist_dict_get_item(response->fields, key);
 
@@ -970,11 +995,16 @@ IDEVICE_ACTIVATION_API void idevice_activation_response_get_field(idevice_activa
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_get_fields(idevice_activation_response_t response, plist_t* fields)
 {
-	*fields = plist_copy(response->fields);
+	if (response && response->fields && fields) {
+		*fields = plist_copy(response->fields);
+	}
 }
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_get_label(idevice_activation_response_t response, const char* key, char** value)
 {
+	if (!response || !key || !value)
+		return;
+
 	*value = NULL;
 	plist_t item = plist_dict_get_item(response->labels, key);
 	if (item) {
@@ -984,16 +1014,25 @@ IDEVICE_ACTIVATION_API void idevice_activation_response_get_label(idevice_activa
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_get_title(idevice_activation_response_t response, const char** title)
 {
+	if (!response || !title)
+		return;
+
 	*title = response->title;
 }
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_get_description(idevice_activation_response_t response, const char** description)
 {
+	if (!response || !description)
+		return;
+
 	*description = response->description;
 }
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_get_activation_record(idevice_activation_response_t response, plist_t* activation_record)
 {
+	if (!response || !activation_record)
+		return;
+
 	if (response->activation_record) {
 		*activation_record = plist_copy(response->activation_record);
 	} else {
@@ -1003,16 +1042,25 @@ IDEVICE_ACTIVATION_API void idevice_activation_response_get_activation_record(id
 
 IDEVICE_ACTIVATION_API int idevice_activation_response_is_activation_acknowledged(idevice_activation_response_t response)
 {
+	if (!response)
+		return 0;
+
 	return response->is_activation_ack;
 }
 
 IDEVICE_ACTIVATION_API int idevice_activation_response_is_authentication_required(idevice_activation_response_t response)
 {
+	if (!response)
+		return 0;
+
 	return response->is_auth_required;
 }
 
 IDEVICE_ACTIVATION_API int idevice_activation_response_field_requires_input(idevice_activation_response_t response, const char* key)
 {
+	if (!response || !key)
+		return 0;
+
 	if (plist_dict_get_item(response->fields_require_input, key)) {
 		return 1;
 	}
@@ -1021,6 +1069,9 @@ IDEVICE_ACTIVATION_API int idevice_activation_response_field_requires_input(idev
 
 IDEVICE_ACTIVATION_API int idevice_activation_response_has_errors(idevice_activation_response_t response)
 {
+	if (!response)
+		return 0;
+
 	return response->has_errors;
 }
 
@@ -1029,7 +1080,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 	idevice_activation_error_t result = IDEVICE_ACTIVATION_E_SUCCESS;
 
 	// check arguments
-	if (!request) {
+	if (!request || !response) {
 		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
 	}
 
