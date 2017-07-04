@@ -1,6 +1,8 @@
 /**
  * @file activation.c
  *
+ * Copyright (c) 2016-2017 Nikias Bassen, All Rights Reserved.
+ * Copyright (c) 2014-2015 Martin Szulecki, All Rights Reserved.
  * Copyright (c) 2011-2014 Mirell Development, All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -51,6 +53,7 @@
 #define IDEVICE_ACTIVATION_USER_AGENT_IOS "iOS Device Activator (MobileActivation-20 built on Jan 15 2012 at 19:07:28)"
 #define IDEVICE_ACTIVATION_USER_AGENT_ITUNES "iTunes/11.1.4 (Macintosh; OS X 10.9.1) AppleWebKit/537.73.11"
 #define IDEVICE_ACTIVATION_DEFAULT_URL "https://albert.apple.com/deviceservices/deviceActivation"
+#define IDEVICE_ACTIVATION_DRM_HANDSHAKE_DEFAULT_URL "https://albert.apple.com/deviceservices/drmHandshake"
 
 typedef enum {
 	IDEVICE_ACTIVATION_CONTENT_TYPE_URL_ENCODED,
@@ -155,39 +158,40 @@ IDEVICE_ACTIVATION_API void idevice_activation_set_debug_level(int level) {
 	debug_level = level;
 }
 
-static idevice_activation_error_t idevice_activation_activation_node_from_plist_xml(const char* plist_xml, size_t size, plist_t* activation_node)
+static idevice_activation_error_t idevice_activation_activation_record_from_plist(idevice_activation_response_t response, plist_t plist)
 {
-	plist_t activation_ticket = NULL;
-
-	plist_from_xml(plist_xml, size, &activation_ticket);
-	if (activation_ticket == NULL) {
-		return IDEVICE_ACTIVATION_E_PLIST_PARSING_ERROR;
-	}
-
-	plist_t activation_node_tmp = plist_dict_get_item(activation_ticket, "iphone-activation");
-	if (!activation_node_tmp) {
-		activation_node_tmp = plist_dict_get_item(activation_ticket, "device-activation");
-		if (!activation_node_tmp) {
-			plist_free(activation_ticket);
+	plist_t record = plist_dict_get_item(plist, "ActivationRecord");
+	if (record != NULL) {
+		plist_t ack_received = plist_dict_get_item(record, "ack-received");
+		if (ack_received) {
+			uint8_t val = 0;
+			plist_get_bool_val(ack_received, &val);
+			if (val) {
+				response->is_activation_ack = 1;
+			}
+		}
+		response->activation_record = plist_copy(plist);
+	} else {
+		plist_t activation_node = plist_dict_get_item(plist, "iphone-activation");
+		if (!activation_node) {
+			activation_node = plist_dict_get_item(plist, "device-activation");
+		}
+		if (!activation_node) {
 			return IDEVICE_ACTIVATION_E_PLIST_PARSING_ERROR;
 		}
+		plist_t ack_received = plist_dict_get_item(activation_node, "ack-received");
+		if (ack_received) {
+			uint8_t val = 0;
+			plist_get_bool_val(ack_received, &val);
+			if (val) {
+				response->is_activation_ack = 1;
+			}
+		}
+		record = plist_dict_get_item(activation_node, "activation-record");
+		if (record) {
+			response->activation_record = plist_copy(record);
+		}
 	}
-
-	*activation_node = plist_copy(activation_node_tmp);
-	plist_free(activation_ticket);
-
-	return IDEVICE_ACTIVATION_E_SUCCESS;
-}
-
-static idevice_activation_error_t idevice_activation_activation_record_from_activation_node(plist_t activation_node, plist_t* activation_record)
-{
-	plist_t record = plist_dict_get_item(activation_node, "activation-record");
-	if (!record) {
-		return IDEVICE_ACTIVATION_E_PLIST_PARSING_ERROR;
-	}
-
-	*activation_record = plist_copy(record);
-
 	return IDEVICE_ACTIVATION_E_SUCCESS;
 }
 
@@ -452,46 +456,24 @@ static idevice_activation_error_t idevice_activation_parse_html_response(idevice
 	}
 
 	if (xpath_result->nodesetval && xpath_result->nodesetval->nodeNr) {
-		plist_t activation_node = NULL;
+		plist_t plist = NULL;
 		xmlBufferPtr plistNodeBuffer = xmlBufferCreate();
 		if (htmlNodeDump(plistNodeBuffer, doc, xpath_result->nodesetval->nodeTab[0]) == -1) {
 			result = IDEVICE_ACTIVATION_E_HTML_PARSING_ERROR;
 			goto local_cleanup;
 		}
 
-		result = idevice_activation_activation_node_from_plist_xml(
-			(const char*) plistNodeBuffer->content, plistNodeBuffer->use, &activation_node);
-		if (result != IDEVICE_ACTIVATION_E_SUCCESS) {
-			response->has_errors = 1;
-			result = IDEVICE_ACTIVATION_E_SUCCESS;
+		plist_from_xml((const char*) plistNodeBuffer->content, plistNodeBuffer->use, &plist);
+		if (!plist) {
+			result = IDEVICE_ACTIVATION_E_PLIST_PARSING_ERROR;
 			goto local_cleanup;
 		}
-
-		// check for ack-received
-		plist_t ack_received = plist_dict_get_item(activation_node, "ack-received");
-		if (ack_received) {
-			uint8_t val = 0;
-			plist_get_bool_val(ack_received, &val);
-			if (val) {
-				response->is_activation_ack = 1;
-			} else {
-				result = IDEVICE_ACTIVATION_E_PLIST_PARSING_ERROR;
-			}
-
-			goto local_cleanup;
-		}
-
-		// try to retrieve the activation record
-		result = idevice_activation_activation_record_from_activation_node(activation_node, &response->activation_record);
-		if (result != IDEVICE_ACTIVATION_E_SUCCESS) {
-			goto local_cleanup;
-		}
+		result = idevice_activation_activation_record_from_plist(response, plist);
+		plist_free(plist);
 
 	local_cleanup:
 		if (plistNodeBuffer)
 			xmlBufferFree(plistNodeBuffer);
-		if (activation_node)
-			plist_free(activation_node);
 		goto cleanup;
 	}
 
@@ -514,16 +496,25 @@ static idevice_activation_error_t idevice_activation_parse_raw_response(idevice_
 	{
 		case IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST:
 		{
-			plist_t activation_node = NULL;
 			idevice_activation_error_t result = IDEVICE_ACTIVATION_E_SUCCESS;
 
-			result = idevice_activation_activation_node_from_plist_xml(response->raw_content, response->raw_content_size, &activation_node);
-			if (result != IDEVICE_ACTIVATION_E_SUCCESS) {
-				return result;
+			plist_t plist = NULL;
+			plist_from_xml(response->raw_content, response->raw_content_size, &plist);
+
+			if (plist == NULL) {
+				return IDEVICE_ACTIVATION_E_PLIST_PARSING_ERROR;
 			}
 
-			result = idevice_activation_activation_record_from_activation_node(activation_node, &response->activation_record);
-			plist_free(activation_node);
+			/* check if this is a reply to drmHandshake request */
+			if (plist_dict_get_item(plist, "HandshakeResponseMessage") != NULL) {
+				result = IDEVICE_ACTIVATION_E_SUCCESS;
+			} else {
+				result = idevice_activation_activation_record_from_plist(response, plist);
+			}
+
+			plist_free(response->fields);
+			response->fields = plist;
+
 			return result;
 		}
 		case IDEVICE_ACTIVATION_CONTENT_TYPE_BUDDYML:
@@ -558,6 +549,8 @@ static size_t idevice_activation_header_callback(void *data, size_t size, size_t
 	const size_t total = size * nmemb;
 	if (total != 0) {
 		if (strstr(data, "Content-Type: text/xml") != NULL) {
+			response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
+		} else if (strstr(data, "Content-Type: application/xml") != NULL) {
 			response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
 		} else if (strstr(data, "Content-Type: application/x-buddyml") != NULL) {
 			response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_BUDDYML;
@@ -778,6 +771,26 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 	tmp_request->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_MULTIPART_FORMDATA;
 	tmp_request->url = strdup(IDEVICE_ACTIVATION_DEFAULT_URL);
 	tmp_request->fields = fields;
+	*request = tmp_request;
+
+	return IDEVICE_ACTIVATION_E_SUCCESS;
+}
+
+IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_drm_handshake_request_new(idevice_activation_client_type_t client_type, idevice_activation_request_t* request)
+{
+	if (!request)
+		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
+
+	idevice_activation_request_t tmp_request = (idevice_activation_request_t) malloc(sizeof(idevice_activation_request));
+
+	if (!tmp_request) {
+		return IDEVICE_ACTIVATION_E_OUT_OF_MEMORY;
+	}
+
+	tmp_request->client_type = client_type;
+	tmp_request->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
+	tmp_request->url = strdup(IDEVICE_ACTIVATION_DRM_HANDSHAKE_DEFAULT_URL);
+	tmp_request->fields = plist_new_dict();
 	*request = tmp_request;
 
 	return IDEVICE_ACTIVATION_E_SUCCESS;
@@ -1093,6 +1106,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 
 	CURL* handle = curl_easy_init();
 	struct curl_httppost* form = NULL;
+	struct curl_slist* slist = NULL;
 
 	if (!handle) {
 		result = IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
@@ -1181,6 +1195,16 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 		curl_easy_setopt(handle, CURLOPT_POST, 1);
 		curl_easy_setopt(handle, CURLOPT_POSTFIELDS, postdata);
 		curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, strlen(postdata));
+	} else if (request->content_type == IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST) {
+		char *postdata = NULL;
+		uint32_t postdata_len = 0;
+		plist_to_xml(request->fields, &postdata, &postdata_len);
+		curl_easy_setopt(handle, CURLOPT_POST, 1);
+		curl_easy_setopt(handle, CURLOPT_POSTFIELDS, postdata);
+		curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, postdata_len);
+		slist = curl_slist_append(NULL, "Content-Type: application/x-apple-plist");
+		slist = curl_slist_append(slist, "Accept: application/xml");
+		curl_easy_setopt(handle, CURLOPT_HTTPHEADER, slist);
 	}
 	else {
 		result = IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
@@ -1225,6 +1249,8 @@ cleanup:
 		free(iter);
 	if (form)
 		curl_formfree(form);
+	if (slist)
+		curl_slist_free_all(slist);
 	if (handle)
 		curl_easy_cleanup(handle);
 

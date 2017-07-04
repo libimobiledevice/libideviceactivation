@@ -2,6 +2,8 @@
  * @file libideviceactivation.h
  * @brief Manage device activation process.
  *
+ * Copyright (c) 2016-2017 Nikias Bassen, All Rights Reserved.
+ * Copyright (c) 2014-2015 Martin Szulecki, All Rights Reserved.
  * Copyright (c) 2011-2014 Mirell Development, All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -57,6 +59,7 @@ void idevice_activation_set_debug_level(int level);
 
 idevice_activation_error_t idevice_activation_request_new(idevice_activation_client_type_t activation_type, idevice_activation_request_t* request);
 idevice_activation_error_t idevice_activation_request_new_from_lockdownd(idevice_activation_client_type_t activation_type, lockdownd_client_t lockdown, idevice_activation_request_t* request);
+idevice_activation_error_t idevice_activation_drm_handshake_request_new(idevice_activation_client_type_t client_type, idevice_activation_request_t* request);
 void idevice_activation_request_free(idevice_activation_request_t request);
 
 void idevice_activation_request_get_fields(idevice_activation_request_t request, plist_t* fields);
