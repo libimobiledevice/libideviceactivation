@@ -2,6 +2,8 @@
  * ideviceactivation.c
  * A command line tool to handle the activation process
  *
+ * Copyright (c) 2016-2017 Nikias Bassen, All Rights Reserved.
+ * Copyright (c) 2014-2015 Martin Szulecki, All Rights Reserved.
  * Copyright (c) 2011-2015 Mirell Development, All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -73,6 +75,7 @@ int main(int argc, char *argv[])
 	char *udid = NULL;
 	char *signing_service_url = NULL;
 	int use_mobileactivation = 0;
+	int session_mode = 0;
 	int i;
 	int result = EXIT_FAILURE;
 
@@ -150,8 +153,37 @@ int main(int argc, char *argv[])
 	}
 
 	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &lockdown, "ideviceactivation")) {
+		fprintf(stderr, "Failed to connect to lockdownd\n");
 		result = EXIT_FAILURE;
 		goto cleanup;
+	}
+
+	plist_t p_version = NULL;
+	uint32_t product_version = 0;
+	if (lockdownd_get_value(lockdown, NULL, "ProductVersion", &p_version) == LOCKDOWN_E_SUCCESS) {
+		int vers[3] = {0, 0, 0};
+		char *s_version = NULL;
+		plist_get_string_val(p_version, &s_version);
+		if (s_version && sscanf(s_version, "%d.%d.%d", &vers[0], &vers[1], &vers[2]) >= 2) {
+			product_version = ((vers[0] & 0xFF) << 16) | ((vers[1] & 0xFF) << 8) | (vers[2] & 0xFF);
+		}
+		free(s_version);
+	}
+	plist_free(p_version);
+
+	if (product_version >= 0x0A0200) {
+		/* The activation server will not acknowledge the activation for iOS >= 10.2 anymore. Let's warn the user about this. */
+		plist_t state = NULL;
+		lockdownd_get_value(lockdown, NULL, "ActivationState", &state);
+		if (state) {
+			char *state_str = NULL;
+			plist_get_string_val(state, &state_str);
+			if (state_str && strcmp(state_str, "Unactivated") != 0) {
+				printf("NOTE: This device appears to be already activated. The server might report an error 'Device Unknown' instead of acknowledging the activation.\n");
+			}
+			free(state_str);
+			plist_free(state);
+		}
 	}
 
 	// check if we should use the new mobileactivation service
@@ -196,26 +228,73 @@ int main(int argc, char *argv[])
 			if (use_mobileactivation) {
 				// create activation request from mobileactivation
 				plist_t ainfo = NULL;
+				if (mobileactivation_create_activation_info(ma, &ainfo) != MOBILEACTIVATION_E_SUCCESS) {
+					session_mode = 1;
+				}
+				mobileactivation_client_free(ma);
+				ma = NULL;
+				if (session_mode) {
+					/* first grab session blob from device required for drmHandshake */
+					plist_t blob = NULL;
+					if (mobileactivation_client_start_service(device, &ma, "ideviceactivation") != MOBILEACTIVATION_E_SUCCESS) {
+						fprintf(stderr, "Failed to connect to %s\n", MOBILEACTIVATION_SERVICE_NAME);
+						result = EXIT_FAILURE;
+						goto cleanup;
+					}
+					if (mobileactivation_create_activation_session_info(ma, &blob) != MOBILEACTIVATION_E_SUCCESS) {
+						fprintf(stderr, "Failed to get ActivationSessionInfo from mobileactivation\n");
+						result = EXIT_FAILURE;
+						goto cleanup;
+					}
+					mobileactivation_client_free(ma);
+					ma = NULL;
 
-				if ((mobileactivation_create_activation_info(ma, &ainfo) != MOBILEACTIVATION_E_SUCCESS) || !ainfo || (plist_get_node_type(ainfo) != PLIST_DICT)) {
+					/* create drmHandshake request with blob from device */
+					if (idevice_activation_drm_handshake_request_new(IDEVICE_ACTIVATION_CLIENT_MOBILE_ACTIVATION, &request) != IDEVICE_ACTIVATION_E_SUCCESS) {
+						fprintf(stderr, "Failed to create drmHandshake request.\n");
+						result = EXIT_FAILURE;
+						goto cleanup;
+					}
+					idevice_activation_request_set_fields(request, blob);
+					plist_free(blob);
+
+					/* send request to server and get response */
+					idevice_activation_send_request(request, &response);
+					plist_t handshake_response = NULL;
+					idevice_activation_response_get_fields(response, &handshake_response);
+					idevice_activation_response_free(response);
+					response = NULL;
+
+					/* use handshake response to get activation info from device */
+					if (mobileactivation_client_start_service(device, &ma, "ideviceactivation") != MOBILEACTIVATION_E_SUCCESS) {
+						fprintf(stderr, "Failed to connect to %s\n", MOBILEACTIVATION_SERVICE_NAME);
+						result = EXIT_FAILURE;
+						goto cleanup;
+					}
+					if ((mobileactivation_create_activation_info_with_session(ma, handshake_response, &ainfo) != MOBILEACTIVATION_E_SUCCESS) || !ainfo || (plist_get_node_type(ainfo) != PLIST_DICT)) {
+						fprintf(stderr, "Failed to get ActivationInfo from mobileactivation\n");
+						result = EXIT_FAILURE;
+						goto cleanup;
+					}
+					mobileactivation_client_free(ma);
+					ma = NULL;
+				} else if (!ainfo || plist_get_node_type(ainfo) != PLIST_DICT) {
 					fprintf(stderr, "Failed to get ActivationInfo from mobileactivation\n");
 					result = EXIT_FAILURE;
 					goto cleanup;
 				}
 
+				/* create activation request */
 				if (idevice_activation_request_new(IDEVICE_ACTIVATION_CLIENT_MOBILE_ACTIVATION, &request) != IDEVICE_ACTIVATION_E_SUCCESS) {
 					fprintf(stderr, "Failed to create activation request.\n");
 					result = EXIT_FAILURE;
 					goto cleanup;
 				}
 
+				/* add activation info to request */
 				plist_t request_fields = plist_new_dict();
 				plist_dict_set_item(request_fields, "activation-info", ainfo);
-
 				idevice_activation_request_set_fields(request, request_fields);
-
-				mobileactivation_client_free(ma);
-				ma = NULL;
 			} else {
 				// create activation request from lockdown
 				if (idevice_activation_request_new_from_lockdownd(
@@ -225,6 +304,8 @@ int main(int argc, char *argv[])
 					goto cleanup;
 				}
 			}
+			lockdownd_client_free(lockdown);
+			lockdown = NULL;
 
 			if (request && signing_service_url) {
 				idevice_activation_request_set_url(request, signing_service_url);
@@ -236,12 +317,6 @@ int main(int argc, char *argv[])
 					// Here response might have some content that could't be correctly interpreted (parsed)
 					// by the library. Printing out the content could help to identify the cause of the error.
 					result = EXIT_FAILURE;
-					goto cleanup;
-				}
-
-				if (idevice_activation_response_is_activation_acknowledged(response)) {
-					printf("Activation server reports that device is already activated.\n");
-					result = EXIT_SUCCESS;
 					goto cleanup;
 				}
 
@@ -264,22 +339,39 @@ int main(int argc, char *argv[])
 				idevice_activation_response_get_activation_record(response, &record);
 
 				if (record) {
+					if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(device, &lockdown, "ideviceactivation")) {
+						fprintf(stderr, "Failed to connect to lockdownd\n");
+						result = EXIT_FAILURE;
+						goto cleanup;
+					}
 					if (use_mobileactivation) {
 						svc = NULL;
-						if (lockdownd_start_service(lockdown, MOBILEACTIVATION_SERVICE_NAME, &svc) == LOCKDOWN_E_SUCCESS) {
-							mobileactivation_error_t maerr = mobileactivation_client_new(device, svc, &ma);
-							lockdownd_service_descriptor_free(svc);
-							if (maerr != MOBILEACTIVATION_E_SUCCESS) {
-								fprintf(stderr, "Failed to connect to %s\n", MOBILEACTIVATION_SERVICE_NAME);
+						if (lockdownd_start_service(lockdown, MOBILEACTIVATION_SERVICE_NAME, &svc) != LOCKDOWN_E_SUCCESS) {
+							fprintf(stderr, "Failed to start service %s\n", MOBILEACTIVATION_SERVICE_NAME);
+							result = EXIT_FAILURE;
+							goto cleanup;
+						}
+						mobileactivation_error_t maerr = mobileactivation_client_new(device, svc, &ma);
+						lockdownd_service_descriptor_free(svc);
+						svc = NULL;
+						if (maerr != MOBILEACTIVATION_E_SUCCESS) {
+							fprintf(stderr, "Failed to connect to %s\n", MOBILEACTIVATION_SERVICE_NAME);
+							result = EXIT_FAILURE;
+							goto cleanup;
+						}
+
+						if (session_mode) {
+							if (MOBILEACTIVATION_E_SUCCESS != mobileactivation_activate_with_session(ma, record)) {
+								fprintf(stderr, "Failed to activate device with record.\n");
 								result = EXIT_FAILURE;
 								goto cleanup;
 							}
-						}
-
-						if (MOBILEACTIVATION_E_SUCCESS != mobileactivation_activate(ma, record)) {
-							fprintf(stderr, "Failed to activate device with record.\n");
-							result = EXIT_FAILURE;
-							goto cleanup;
+						} else {
+							if (MOBILEACTIVATION_E_SUCCESS != mobileactivation_activate(ma, record)) {
+								fprintf(stderr, "Failed to activate device with record.\n");
+								result = EXIT_FAILURE;
+								goto cleanup;
+							}
 						}
 					} else {
 						// activate device using lockdown
@@ -298,6 +390,12 @@ int main(int argc, char *argv[])
 					}
 					break;
 				} else {
+					if (idevice_activation_response_is_activation_acknowledged(response)) {
+						printf("Activation server reports that device is already activated.\n");
+						result = EXIT_SUCCESS;
+						goto cleanup;
+					}
+
 					idevice_activation_response_get_title(response, &response_title);
 					if (response_title) {
 						fprintf(stderr, "Server reports:\n%s\n", response_title);
