@@ -635,6 +635,34 @@ static int plist_strip_xml(char** xmlplist)
 	return 0;
 }
 
+static int idevice_activation_curl_debug_callback(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr)
+{
+	switch (type) {
+	case CURLINFO_TEXT:
+		fprintf(stderr, "* ");
+		break;
+	case CURLINFO_DATA_IN:
+	case CURLINFO_HEADER_IN:
+		fprintf(stderr, "< ");
+		break;
+	case CURLINFO_DATA_OUT:
+	case CURLINFO_HEADER_OUT:
+		fprintf(stderr, "> ");
+		break;
+	case CURLINFO_SSL_DATA_IN:
+	case CURLINFO_SSL_DATA_OUT:
+		return 0;
+	default:
+		return 0;
+	}
+
+	fwrite(data, 1, size, stderr);
+	if (size > 0 && data[size-1] != '\n') {
+		fprintf(stderr, "\n");
+	}
+	return 0;
+}
+
 IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new(idevice_activation_client_type_t client_type, idevice_activation_request_t* request)
 {
 	if (!request)
@@ -1228,13 +1256,10 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 	// enable communication debugging
 	if (debug_level > 0) {
 		curl_easy_setopt(handle, CURLOPT_VERBOSE, 1);
+		curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, idevice_activation_curl_debug_callback);
 	}
 
 	curl_easy_perform(handle);
-
-	if (debug_level > 0) {
-		fprintf(stderr, "%*s\n", (int)tmp_response->raw_content_size, tmp_response->raw_content);
-	}
 
 	result = idevice_activation_parse_raw_response(tmp_response);
 	if (result != IDEVICE_ACTIVATION_E_SUCCESS) {
