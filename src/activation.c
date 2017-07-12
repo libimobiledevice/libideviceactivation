@@ -705,13 +705,10 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 			fprintf(stderr, "%s: Unable to get SerialNumber from lockdownd\n", __func__);
 		plist_free(fields);
 		return IDEVICE_ACTIVATION_E_INCOMPLETE_INFO;
-	} else {
-		plist_dict_set_item(fields, "AppleSerialNumber", plist_copy(node));
 	}
-	if (node) {
-		plist_free(node);
-		node = NULL;
-	}
+	plist_dict_set_item(fields, "AppleSerialNumber", plist_copy(node));
+	plist_free(node);
+	node = NULL;
 
 	// check if device has telephone capability
 	if ((lockdownd_get_value(lockdown, NULL, "TelephonyCapability", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_BOOLEAN)) {
@@ -719,10 +716,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 	} else {
 		plist_get_bool_val(node, &has_telephony_capability);
 	}
-	if (node) {
-		plist_free(node);
-		node = NULL;
-	}
+	plist_free(node);
+	node = NULL;
 
 	if (has_telephony_capability) {
 		// add IMEI
@@ -732,10 +727,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 			plist_dict_set_item(fields, "IMEI", plist_copy(node));
 			has_mobile_equipment_id = 1;
 		}
-		if (node) {
-			plist_free(node);
-			node = NULL;
-		}
+		plist_free(node);
+		node = NULL;
 
 		// add MEID
 		if ((lockdownd_get_value(lockdown, NULL, "MobileEquipmentIdentifier", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_STRING)) {
@@ -748,10 +741,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 		} else {
 			plist_dict_set_item(fields, "MEID", plist_copy(node));
 		}
-		if (node) {
-			plist_free(node);
-			node = NULL;
-		}
+		plist_free(node);
+		node = NULL;
 
 		// add IMSI
 		if ((lockdownd_get_value(lockdown, NULL, "InternationalMobileSubscriberIdentity", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_STRING)) {
@@ -760,10 +751,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 		} else {
 			plist_dict_set_item(fields, "IMSI", plist_copy(node));
 		}
-		if (node) {
-			plist_free(node);
-			node = NULL;
-		}
+		plist_free(node);
+		node = NULL;
 
 		// add ICCID
 		if ((lockdownd_get_value(lockdown, NULL, "IntegratedCircuitCardIdentity", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_STRING)) {
@@ -772,10 +761,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 		} else {
 			plist_dict_set_item(fields, "ICCID", plist_copy(node));
 		}
-		if (node) {
-			plist_free(node);
-			node = NULL;
-		}
+		plist_free(node);
+		node = NULL;
 	}
 
 	// add activation-info
@@ -829,9 +816,7 @@ IDEVICE_ACTIVATION_API void idevice_activation_request_free(idevice_activation_r
 	if (!request)
 		return;
 
-	if (request->fields)
-		plist_free(request->fields);
-
+	plist_free(request->fields);
 	free(request);
 }
 
@@ -1009,16 +994,17 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_to
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_free(idevice_activation_response_t response)
 {
-	if (response) {
-		free(response->raw_content);
-		free(response->title);
-		free(response->description);
-		plist_free(response->activation_record);
-		plist_free(response->fields);
-		plist_free(response->fields_require_input);
-		plist_free(response->labels);
-		free(response);
-	}
+	if (!response)
+		return;
+
+	free(response->raw_content);
+	free(response->title);
+	free(response->description);
+	plist_free(response->activation_record);
+	plist_free(response->fields);
+	plist_free(response->fields_require_input);
+	plist_free(response->labels);
+	free(response);
 }
 
 IDEVICE_ACTIVATION_API void idevice_activation_response_get_field(idevice_activation_response_t response, const char* key, char** value)
@@ -1102,10 +1088,7 @@ IDEVICE_ACTIVATION_API int idevice_activation_response_field_requires_input(idev
 	if (!response || !key)
 		return 0;
 
-	if (plist_dict_get_item(response->fields_require_input, key)) {
-		return 1;
-	}
-	return 0;
+	return (plist_dict_get_item(response->fields_require_input, key) ? 1 : 0);
 }
 
 IDEVICE_ACTIVATION_API int idevice_activation_response_has_errors(idevice_activation_response_t response)
@@ -1174,8 +1157,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 
 					curl_formadd(&form, &last, CURLFORM_COPYNAME, key, CURLFORM_COPYCONTENTS, svalue, CURLFORM_END);
 
-					if (svalue)
-						free(svalue);
+					free(svalue);
 					svalue = NULL;
 				}
 			}
@@ -1194,8 +1176,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 						plist_get_string_val(value_node, &svalue);
 					} else {
 						// only strings supported
-						if (postdata)
-							free(postdata);
+						free(postdata);
 						result = IDEVICE_ACTIVATION_E_UNSUPPORTED_FIELD_TYPE;
 						goto cleanup;
 					}
@@ -1208,8 +1189,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 						free(value_encoded);
 					}
 
-					if (svalue)
-						free(svalue);
+					free(svalue);
 					svalue = NULL;
 				}
 			}
@@ -1271,8 +1251,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 	result = IDEVICE_ACTIVATION_E_SUCCESS;
 
 cleanup:
-	if (iter)
-		free(iter);
+	free(iter);
 	if (form)
 		curl_formfree(form);
 	if (slist)
