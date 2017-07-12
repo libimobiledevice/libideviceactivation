@@ -610,22 +610,23 @@ static int plist_strip_xml(char** xmlplist)
 {
 	uint32_t size = 0;
 
-	if (!xmlplist && !*xmlplist)
+	if (!xmlplist || !*xmlplist)
 		return -1;
 
 	char* start = strstr(*xmlplist, "<plist version=\"1.0\">\n");
-	if (start == NULL) {
+	if (!start)
 		return -1;
-	}
 
 	char* stop = strstr(*xmlplist, "\n</plist>");
-	if (stop == NULL) {
+	if (!stop)
 		return -1;
-	}
 
 	start += strlen("<plist version=\"1.0\">\n");
 	size = stop - start;
 	char* stripped = malloc(size + 1);
+	if (!stripped)
+		return -1;
+
 	memset(stripped, '\0', size + 1);
 	memcpy(stripped, start, size);
 	free(*xmlplist);
