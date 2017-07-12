@@ -1118,7 +1118,6 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 	plist_dict_new_iter(request->fields, &iter);
 	if (!iter) {
 		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
-		goto cleanup;
 	}
 
 	CURL* handle = curl_easy_init();
