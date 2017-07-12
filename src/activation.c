@@ -685,14 +685,13 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 
 IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new_from_lockdownd(idevice_activation_client_type_t client_type, lockdownd_client_t lockdown, idevice_activation_request** request)
 {
-	uint8_t has_telephony_capability = 0;
-	uint8_t has_mobile_equipment_id = 0;
-
-	// check arguments
 	if (!lockdown || !request) {
 		return IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
 	}
 
+	uint8_t has_telephony_capability = 0;
+	uint8_t has_mobile_equipment_id = 0;
+	lockdownd_error_t err;
 	plist_t node = NULL;
 	plist_t fields = plist_new_dict();
 
@@ -700,7 +699,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 	plist_dict_set_item(fields, "InStoreActivation", plist_new_string("false"));
 
 	// add AppleSerialNumber
-	if ((lockdownd_get_value(lockdown, NULL, "SerialNumber", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_STRING)) {
+	err = lockdownd_get_value(lockdown, NULL, "SerialNumber", &node);
+	if (err != LOCKDOWN_E_SUCCESS || !node || plist_get_node_type(node) != PLIST_STRING) {
 		if (debug_level > 0)
 			fprintf(stderr, "%s: Unable to get SerialNumber from lockdownd\n", __func__);
 		plist_free(fields);
@@ -711,7 +711,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 	node = NULL;
 
 	// check if device has telephone capability
-	if ((lockdownd_get_value(lockdown, NULL, "TelephonyCapability", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_BOOLEAN)) {
+	err = lockdownd_get_value(lockdown, NULL, "TelephonyCapability", &node);
+	if (err != LOCKDOWN_E_SUCCESS || !node || plist_get_node_type(node) != PLIST_BOOLEAN) {
 		has_telephony_capability = 0;
 	} else {
 		plist_get_bool_val(node, &has_telephony_capability);
@@ -721,7 +722,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 
 	if (has_telephony_capability) {
 		// add IMEI
-		if ((lockdownd_get_value(lockdown, NULL, "InternationalMobileEquipmentIdentity", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_STRING)) {
+		err = lockdownd_get_value(lockdown, NULL, "InternationalMobileEquipmentIdentity", &node);
+		if (err != LOCKDOWN_E_SUCCESS || !node || plist_get_node_type(node) != PLIST_STRING) {
 			has_mobile_equipment_id = 0;
 		} else {
 			plist_dict_set_item(fields, "IMEI", plist_copy(node));
@@ -731,7 +733,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 		node = NULL;
 
 		// add MEID
-		if ((lockdownd_get_value(lockdown, NULL, "MobileEquipmentIdentifier", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_STRING)) {
+		err = lockdownd_get_value(lockdown, NULL, "MobileEquipmentIdentifier", &node);
+		if (err != LOCKDOWN_E_SUCCESS || !node || plist_get_node_type(node) != PLIST_STRING) {
 			if (debug_level > 0)
 				fprintf(stderr, "%s: Unable to get MEID from lockdownd\n", __func__);
 			if (!has_mobile_equipment_id) {
@@ -745,7 +748,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 		node = NULL;
 
 		// add IMSI
-		if ((lockdownd_get_value(lockdown, NULL, "InternationalMobileSubscriberIdentity", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_STRING)) {
+		err = lockdownd_get_value(lockdown, NULL, "InternationalMobileSubscriberIdentity", &node);
+		if (err != LOCKDOWN_E_SUCCESS || !node || plist_get_node_type(node) != PLIST_STRING) {
 			if (debug_level > 0)
 				fprintf(stderr, "%s: Unable to get IMSI from lockdownd\n", __func__);
 		} else {
@@ -755,7 +759,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 		node = NULL;
 
 		// add ICCID
-		if ((lockdownd_get_value(lockdown, NULL, "IntegratedCircuitCardIdentity", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_STRING)) {
+		err = lockdownd_get_value(lockdown, NULL, "IntegratedCircuitCardIdentity", &node);
+		if (err != LOCKDOWN_E_SUCCESS || !node || plist_get_node_type(node) != PLIST_STRING) {
 			if (debug_level > 0)
 				fprintf(stderr, "%s: Unable to get ICCID from lockdownd\n", __func__);
 		} else {
@@ -766,7 +771,8 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new
 	}
 
 	// add activation-info
-	if ((lockdownd_get_value(lockdown, NULL, "ActivationInfo", &node) != LOCKDOWN_E_SUCCESS) || !node || (plist_get_node_type(node) != PLIST_DICT)) {
+	err = lockdownd_get_value(lockdown, NULL, "ActivationInfo", &node);
+	if (err != LOCKDOWN_E_SUCCESS || !node || plist_get_node_type(node) != PLIST_DICT) {
 		fprintf(stderr, "%s: Unable to get ActivationInfo from lockdownd\n", __func__);
 		plist_free(fields);
 		return IDEVICE_ACTIVATION_E_INCOMPLETE_INFO;
