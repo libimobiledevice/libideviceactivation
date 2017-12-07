@@ -83,6 +83,7 @@ void idevice_activation_response_get_label(idevice_activation_response_t respons
 void idevice_activation_response_get_title(idevice_activation_response_t response, const char** title);
 void idevice_activation_response_get_description(idevice_activation_response_t response, const char** description);
 void idevice_activation_response_get_activation_record(idevice_activation_response_t response, plist_t* activation_record);
+void idevice_activation_response_get_headers(idevice_activation_response_t response, plist_t* headers);
 
 int idevice_activation_response_is_activation_acknowledged(idevice_activation_response_t response);
 int idevice_activation_response_is_authentication_required(idevice_activation_response_t response);

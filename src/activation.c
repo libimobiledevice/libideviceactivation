@@ -78,6 +78,7 @@ struct idevice_activation_response_private {
 	char* title;
 	char* description;
 	plist_t activation_record;
+	plist_t headers;
 	plist_t fields;
 	plist_t fields_require_input;
 	plist_t labels;
@@ -548,15 +549,42 @@ static size_t idevice_activation_header_callback(void *data, size_t size, size_t
 	idevice_activation_response_t response = (idevice_activation_response_t)userdata;
 	const size_t total = size * nmemb;
 	if (total != 0) {
-		if (strstr(data, "Content-Type: text/xml") != NULL) {
-			response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
-		} else if (strstr(data, "Content-Type: application/xml") != NULL) {
-			response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
-		} else if (strstr(data, "Content-Type: application/x-buddyml") != NULL) {
-			response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_BUDDYML;
-		} else if (strstr(data, "Content-Type: text/html") != NULL) {
-			response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_HTML;
+		char *header = malloc(total + 1);
+		char *value = NULL;
+		char *p = NULL;
+		memcpy(header, data, total);
+		header[total] = '\0';
+
+		p = strchr(header, ':');
+		if (p) {
+			*p = '\0';
+			p++;
+			while (*p == ' ') {
+				p++;
+			}
+			if (*p != '\0') {
+				value = p;
+				while (*p != '\0' && *p != '\n' && *p != '\r') {
+					p++;
+				}
+				*p = '\0';
+			}
 		}
+		if (value) {
+			if (strcmp(header, "Content-Type") == 0) {
+				if (strcmp(value, "text/xml") == 0) {
+					response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
+				} else if (strcmp(value, "application/xml") == 0) {
+					response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
+				} else if (strcmp(value, "application/x-buddyml") == 0) {
+					response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_BUDDYML;
+				} else if (strcmp(value, "text/html") == 0) {
+					response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_HTML;
+				}
+			}
+			plist_dict_set_item(response->headers, header, plist_new_string(value));
+		}
+		free(header);
 	}
 	return total;
 }
@@ -929,6 +957,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_ne
 	tmp_response->title = NULL;
 	tmp_response->description = NULL;
 	tmp_response->activation_record = NULL;
+	tmp_response->headers = plist_new_dict();
 	tmp_response->fields = plist_new_dict();
 	tmp_response->fields_require_input = plist_new_dict();
 	tmp_response->labels = plist_new_dict();
@@ -1005,6 +1034,7 @@ IDEVICE_ACTIVATION_API void idevice_activation_response_free(idevice_activation_
 	free(response->title);
 	free(response->description);
 	plist_free(response->activation_record);
+	plist_free(response->headers);
 	plist_free(response->fields);
 	plist_free(response->fields_require_input);
 	plist_free(response->labels);
@@ -1069,6 +1099,14 @@ IDEVICE_ACTIVATION_API void idevice_activation_response_get_activation_record(id
 	} else {
 		*activation_record = NULL;
 	}
+}
+
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_headers(idevice_activation_response_t response, plist_t* headers)
+{
+	if (!response || !headers)
+		return;
+
+	*headers = plist_copy(response->headers);
 }
 
 IDEVICE_ACTIVATION_API int idevice_activation_response_is_activation_acknowledged(idevice_activation_response_t response)
