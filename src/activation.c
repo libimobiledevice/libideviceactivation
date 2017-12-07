@@ -170,7 +170,7 @@ static idevice_activation_error_t idevice_activation_activation_record_from_plis
 				response->is_activation_ack = 1;
 			}
 		}
-		response->activation_record = plist_copy(plist);
+		response->activation_record = plist_new_data(response->raw_content, response->raw_content_size);
 	} else {
 		plist_t activation_node = plist_dict_get_item(plist, "iphone-activation");
 		if (!activation_node) {
