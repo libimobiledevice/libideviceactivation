@@ -361,11 +361,15 @@ int main(int argc, char *argv[])
 						}
 
 						if (session_mode) {
-							if (MOBILEACTIVATION_E_SUCCESS != mobileactivation_activate_with_session(ma, record)) {
+							plist_t headers = NULL;
+							idevice_activation_response_get_headers(response, &headers);
+							if (MOBILEACTIVATION_E_SUCCESS != mobileactivation_activate_with_session(ma, record, headers)) {
+								plist_free(headers);
 								fprintf(stderr, "Failed to activate device with record.\n");
 								result = EXIT_FAILURE;
 								goto cleanup;
 							}
+							plist_free(headers);
 						} else {
 							if (MOBILEACTIVATION_E_SUCCESS != mobileactivation_activate(ma, record)) {
 								fprintf(stderr, "Failed to activate device with record.\n");
