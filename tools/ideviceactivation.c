@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 			if (use_mobileactivation) {
 				// create activation request from mobileactivation
 				plist_t ainfo = NULL;
-				if (mobileactivation_create_activation_info(ma, &ainfo) != MOBILEACTIVATION_E_SUCCESS) {
+				if ((product_version >= 0x0A0000) || (mobileactivation_create_activation_info(ma, &ainfo) != MOBILEACTIVATION_E_SUCCESS)) {
 					session_mode = 1;
 				}
 				mobileactivation_client_free(ma);
