@@ -46,6 +46,7 @@ static void print_usage(int argc, char **argv)
 	printf("Where COMMAND is one of:\n");
 	printf("  activate\t\tattempt to activate the device\n");
 	printf("  deactivate\t\tdeactivate the device\n");
+	printf("  state\t\t\tquery device about its activation state\n");
 	printf("\nThe following OPTIONS are accepted:\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
 	printf("  -u, --udid UDID\ttarget specific device by its 40-digit device UDID\n");
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
 	int result = EXIT_FAILURE;
 
 	typedef enum {
-		OP_NONE = 0, OP_ACTIVATE, OP_DEACTIVATE
+		OP_NONE = 0, OP_ACTIVATE, OP_DEACTIVATE, OP_GETSTATE
 	} op_t;
 	op_t op = OP_NONE;
 
@@ -123,6 +124,10 @@ int main(int argc, char *argv[])
 		}
 		else if (!strcmp(argv[i], "deactivate")) {
 			op = OP_DEACTIVATE;
+			continue;
+		}
+		else if (!strcmp(argv[i], "state")) {
+			op = OP_GETSTATE;
 			continue;
 		}
 		else {
@@ -464,6 +469,23 @@ int main(int argc, char *argv[])
 
 			result = EXIT_SUCCESS;
 			printf("Successfully activated device.\n");
+			break;
+		case OP_GETSTATE: {
+			plist_t state = NULL;
+			if (use_mobileactivation) {
+				mobileactivation_get_activation_state(ma, &state);
+			} else {
+				lockdownd_get_value(lockdown, NULL, "ActivationState", &state);
+			}
+			if (plist_get_node_type(state) == PLIST_STRING) {
+				char *s_state = NULL;
+				plist_get_string_val(state, &s_state);
+				printf("ActivationState: %s\n", s_state);
+				free(s_state);
+			} else {
+				printf("Error getting activation state.\n");
+			}
+			}
 			break;
 	}
 
