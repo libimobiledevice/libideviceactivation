@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	}
 	plist_free(p_version);
 
-	if (product_version >= 0x0A0200) {
+	if (op == OP_ACTIVATE && product_version >= 0x0A0200) {
 		/* The activation server will not acknowledge the activation for iOS >= 10.2 anymore. Let's warn the user about this. */
 		plist_t state = NULL;
 		lockdownd_get_value(lockdown, NULL, "ActivationState", &state);
