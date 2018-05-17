@@ -1273,6 +1273,7 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_reques
 	curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, &idevice_activation_header_callback);
 	curl_easy_setopt(handle, CURLOPT_URL, request->url);
 	curl_easy_setopt(handle, CURLOPT_FORBID_REUSE, 1);
+	curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
 
 	// enable communication debugging
 	if (debug_level > 0) {
