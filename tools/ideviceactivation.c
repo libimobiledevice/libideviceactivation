@@ -49,7 +49,7 @@ static void print_usage(int argc, char **argv)
 	printf("  state\t\t\tquery device about its activation state\n");
 	printf("\nThe following OPTIONS are accepted:\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
-	printf("  -u, --udid UDID\ttarget specific device by its 40-digit device UDID\n");
+	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
 	printf("  -s, --service URL\tuse activation webservice at URL instead of default\n");
 	printf("  -v, --version\t\tprint version information and exit\n");
 	printf("  -h, --help\t\tprints usage information\n");
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 		}
 		else if (!strcmp(argv[i], "-u") || !strcmp(argv[i], "--udid")) {
 			i++;
-			if (!argv[i] || (strlen(argv[i]) != 40)) {
+			if (!argv[i] || !*argv[i]) {
 				print_usage(argc, argv);
 				return EXIT_FAILURE;
 			}
