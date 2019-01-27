@@ -29,12 +29,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <plist/plist.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/mobileactivation.h>
 #include <libideviceactivation.h>
+
+#ifdef WIN32
+#include <windows.h>
+#include <conio.h>
+#else
+#include <termios.h>
+#endif
 
 static void print_usage(int argc, char **argv)
 {
@@ -56,6 +64,48 @@ static void print_usage(int argc, char **argv)
 	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
 	printf("Homepage: <http://libimobiledevice.org>\n");
+}
+
+#ifdef WIN32
+#define BS_CC '\b'
+#define my_getch getch
+#else
+#define BS_CC 0x7f
+static int my_getch(void)
+{
+	struct termios oldt, newt;
+	int ch;
+	tcgetattr(STDIN_FILENO, &oldt);
+	newt = oldt;
+	newt.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+	ch = getchar();
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+	return ch;
+}
+#endif
+
+static void get_user_input(char *buf, int maxlen, int secure)
+{
+	int len = 0;
+	int c;
+
+	while ((c = my_getch())) {
+		if ((c == '\r') || (c == '\n')) {
+			break;
+		} else if (isprint(c)) {
+			if (len < maxlen-1)
+				buf[len++] = c;
+			fputc((secure) ? '*' : c, stdout);
+		} else if (c == BS_CC) {
+			if (len > 0) {
+				fputs("\b \b", stdout);
+				len--;
+			}
+		}
+	}
+	fputs("\n", stdout);
+	buf[len] = 0;
 }
 
 int main(int argc, char *argv[])
@@ -461,9 +511,18 @@ int main(int argc, char *argv[])
 							if (idevice_activation_response_field_requires_input(response, field_key)) {
 								idevice_activation_response_get_label(response, field_key, &field_label);
 								if (interactive) {
-									printf("input %s: ", field_label ? field_label : field_key);
+									char *field_placeholder = NULL;
+									int secure = idevice_activation_response_field_secure_input(response, field_key);
+									idevice_activation_response_get_placeholder(response, field_key, &field_placeholder);
+									printf("input %s", field_label ? field_label : field_key);
+									if (field_placeholder) {
+										printf(" (%s)", field_placeholder);
+										free(field_placeholder);
+									}
+									printf(": ");
+									fflush(stdout);
 									fflush(stdin);
-									scanf("%1023s", input);
+									get_user_input(input, 1023, secure);
 								} else {
 									fprintf(stderr, "Server requires input for '%s' but we're not running interactively.\n", field_label ? field_label : field_key);
 									strcpy(input, "");
