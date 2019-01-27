@@ -8,5 +8,9 @@ libideviceactivation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBIDEVICEACTIVA
 libideviceactivation_la_SOURCES = \
 		activation.c
 
+if WIN32
+libideviceactivation_la_LDFLAGS += -avoid-version
+endif
+
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libideviceactivation-1.0.pc
