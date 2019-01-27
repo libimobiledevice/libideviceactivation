@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.64)
-AC_INIT([libideviceactivation], [1.0.1], [https://github.com/libimobiledevice/libideviceactivation/issues],, [http://libimobiledevice.org])
+AC_INIT([libideviceactivation], [1.1.0], [https://github.com/libimobiledevice/libideviceactivation/issues],, [http://libimobiledevice.org])
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip check-news])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/])
@@ -15,7 +15,7 @@ dnl libtool versioning
 #                 changes to the signature and the semantic)
 #  ? :+1 : ?   == just internal changes
 # CURRENT : REVISION : AGE
-LIBIDEVICEACTIVATION_SO_VERSION=2:1:0
+LIBIDEVICEACTIVATION_SO_VERSION=3:0:1
 
 dnl Minimum package versions
 LIBIMOBILEDEVICE_VERSION=1.2.1
