@@ -2,7 +2,7 @@
  * @file libideviceactivation.h
  * @brief Manage device activation process.
  *
- * Copyright (c) 2016-2017 Nikias Bassen, All Rights Reserved.
+ * Copyright (c) 2016-2019 Nikias Bassen, All Rights Reserved.
  * Copyright (c) 2014-2015 Martin Szulecki, All Rights Reserved.
  * Copyright (c) 2011-2014 Mirell Development, All Rights Reserved.
  *
