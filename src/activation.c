@@ -110,7 +110,7 @@ typedef volatile struct {
 static thread_once_t init_once = {0, 0};
 static thread_once_t deinit_once = {0, 0};
 
-void thread_once(thread_once_t *once_control, void (*init_routine)(void))
+static void thread_once(thread_once_t *once_control, void (*init_routine)(void))
 {
     while (InterlockedExchange(&(once_control->lock), 1) != 0) {
         Sleep(1);
