@@ -314,8 +314,14 @@ static idevice_activation_error_t idevice_activation_parse_buddyml_response(idev
 		xmlXPathFreeObject(xpath_result);
 		xpath_result = NULL;
 	}
-	xpath_result = xmlXPathEvalExpression((const xmlChar*) "/xmlui/page/tableView/section[@footer and not(@footerLinkURL)]/@footer", context);
+	xpath_result = xmlXPathEvalExpression((const xmlChar*) "/xmlui/page/tableView/section/footer[not (@url)]", context);
 	if (!xpath_result) {
+		result = IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
+		goto cleanup;
+	}
+	if (!xpath_result->nodesetval) {
+		xmlXPathFreeObject(xpath_result);
+		xpath_result = xmlXPathEvalExpression((const xmlChar*) "/xmlui/page/tableView/section[@footer and not(@footerLinkURL)]/@footer", context);
 		result = IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
 		goto cleanup;
 	}
@@ -348,6 +354,7 @@ static idevice_activation_error_t idevice_activation_parse_buddyml_response(idev
 		xmlXPathFreeObject(xpath_result);
 		xpath_result = NULL;
 	}
+
 	xpath_result = xmlXPathEvalExpression((const xmlChar*) "/xmlui/page//editableTextRow", context);
 	if (!xpath_result) {
 		result = IDEVICE_ACTIVATION_E_INTERNAL_ERROR;
