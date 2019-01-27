@@ -3,7 +3,7 @@ Version 1.1.0
 
 * Changes:
   - Updated to use new mobileactivation service (requires latest libimobiledevice),
-    introducing 'drmHandshake' / session mode for activating never devices
+    introducing 'drmHandshake' / session mode for activating newer devices
   - Add API calls to query if an input field is secure and to get its placeholder (buddyml)
   - Mask input on console when querying secure input fields
   - Fix parsing of updated activation lock buddyml page
