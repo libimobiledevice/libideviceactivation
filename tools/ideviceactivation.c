@@ -50,6 +50,7 @@ static void print_usage(int argc, char **argv)
 	printf("\nThe following OPTIONS are accepted:\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
 	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
+	printf("  -b, --batch\t\texplicitly run in non-interactive mode (default: auto-detect)\n");
 	printf("  -s, --service URL\tuse activation webservice at URL instead of default\n");
 	printf("  -v, --version\t\tprint version information and exit\n");
 	printf("  -h, --help\t\tprints usage information\n");
@@ -78,6 +79,7 @@ int main(int argc, char *argv[])
 	int use_mobileactivation = 0;
 	int session_mode = 0;
 	int i;
+	int interactive = 1;
 	int result = EXIT_FAILURE;
 
 	typedef enum {
@@ -110,6 +112,10 @@ int main(int argc, char *argv[])
 			signing_service_url = argv[i];
 			continue;
 		}
+		else if (!strcmp(argv[i], "-b") || !strcmp(argv[i], "--batch")) {
+			interactive = 0;
+			continue;
+		}
 		else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
 			print_usage(argc, argv);
 			return EXIT_SUCCESS;
@@ -133,6 +139,12 @@ int main(int argc, char *argv[])
 		else {
 			print_usage(argc, argv);
 			return EXIT_SUCCESS;
+		}
+	}
+
+	if (interactive) {
+		if (!isatty(fileno(stdin)) || !isatty(fileno(stdout))) {
+			interactive = 0;
 		}
 	}
 
@@ -441,15 +453,22 @@ int main(int argc, char *argv[])
 
 					idevice_activation_request_set_fields_from_response(request, response);
 
+					int interactive_count = 0;
 					do {
 						field_key = NULL;
 						plist_dict_next_item(fields, iter, &field_key, NULL);
 						if (field_key) {
 							if (idevice_activation_response_field_requires_input(response, field_key)) {
 								idevice_activation_response_get_label(response, field_key, &field_label);
-								printf("input %s: ", field_label ? field_label : field_key);
-								fflush(stdin);
-								scanf("%1023s", input);
+								if (interactive) {
+									printf("input %s: ", field_label ? field_label : field_key);
+									fflush(stdin);
+									scanf("%1023s", input);
+								} else {
+									fprintf(stderr, "Server requires input for '%s' but we're not running interactively.\n", field_label ? field_label : field_key);
+									strcpy(input, "");
+									interactive_count++;
+								}
 								idevice_activation_request_set_field(request, field_key, input);
 								if (field_label) {
 									free(field_label);
@@ -463,6 +482,12 @@ int main(int argc, char *argv[])
 					iter = NULL;
 					idevice_activation_response_free(response);
 					response = NULL;
+
+					if (interactive_count > 0 && !interactive) {
+						fprintf(stderr, "Failed to activate device.\n");
+						result = EXIT_FAILURE;
+						goto cleanup;
+					}
 				}
 
 			}
