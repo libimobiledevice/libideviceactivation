@@ -447,9 +447,22 @@ int main(int argc, char *argv[])
 					} else {
 						// activate device using lockdown
 						if (LOCKDOWN_E_SUCCESS != lockdownd_activate(lockdown, record)) {
-							fprintf(stderr, "Failed to activate device with record.\n");
-							result = EXIT_FAILURE;
-							goto cleanup;
+							plist_t state = NULL;
+							lockdownd_get_value(lockdown, NULL, "ActivationState", &state);
+							int success = 0;
+							if (state && plist_get_node_type(state) == PLIST_STRING) {
+								char *strval = NULL;
+								plist_get_string_val(state, &strval);
+								if (strval && strcmp(strval, "Unactivated")) {
+									success = 1;
+								}
+								free(strval);
+							}
+							if (!success) {
+								fprintf(stderr, "Failed to activate device with record.\n");
+								result = EXIT_FAILURE;
+								goto cleanup;
+							}
 						}
 					}
 
