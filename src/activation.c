@@ -81,7 +81,9 @@ struct idevice_activation_response_private {
 	plist_t headers;
 	plist_t fields;
 	plist_t fields_require_input;
+	plist_t fields_secure_input;
 	plist_t labels;
+	plist_t labels_placeholder;
 	int is_activation_ack;
 	int is_auth_required;
 	int has_errors;
@@ -196,11 +198,14 @@ static idevice_activation_error_t idevice_activation_activation_record_from_plis
 	return IDEVICE_ACTIVATION_E_SUCCESS;
 }
 
-static void idevice_activation_response_add_field(idevice_activation_response_t response, const char* key, const char* value, int required_input)
+static void idevice_activation_response_add_field(idevice_activation_response_t response, const char* key, const char* value, int required_input, int secure_input)
 {
 	plist_dict_set_item(response->fields, key, plist_new_string(value));
 	if (required_input) {
 		plist_dict_set_item(response->fields_require_input, key, plist_new_bool(1));
+	}
+	if (secure_input) {
+		plist_dict_set_item(response->fields_secure_input, key, plist_new_bool(1));
 	}
 }
 
@@ -356,13 +361,26 @@ static idevice_activation_error_t idevice_activation_parse_buddyml_response(idev
 				result = IDEVICE_ACTIVATION_E_BUDDYML_PARSING_ERROR;
 				goto cleanup;
 			}
+			int secure_input = 0;
+			xmlChar* secure = xmlGetProp(xpath_result->nodesetval->nodeTab[i], (const xmlChar*) "secure");
+			if (secure) {
+				if (!strcmp((const char*)secure, "true")) {
+					secure_input = 1;
+				}
+				xmlFree(secure);
+			}
 
-			idevice_activation_response_add_field(response, (const char*) id, "", 1);
+			idevice_activation_response_add_field(response, (const char*) id, "", 1, secure_input);
 
 			xmlChar* label = xmlGetProp(xpath_result->nodesetval->nodeTab[i], (const xmlChar*) "label");
 			if (label) {
 				plist_dict_set_item(response->labels, (const char*)id, plist_new_string((const char*) label));
 				xmlFree(label);
+			}
+			xmlChar* placeholder = xmlGetProp(xpath_result->nodesetval->nodeTab[i], (const xmlChar*) "placeholder");
+			if (placeholder) {
+				plist_dict_set_item(response->labels_placeholder, (const char*)id, plist_new_string((const char*) placeholder));
+				xmlFree(placeholder);
 			}
 
 			xmlFree(id);
@@ -390,7 +408,7 @@ static idevice_activation_error_t idevice_activation_parse_buddyml_response(idev
 				}
 
 				idevice_activation_response_add_field(response,
-					(const char*) xpath_result->nodesetval->nodeTab[i]->name, (const char*) content, 0);
+					(const char*) xpath_result->nodesetval->nodeTab[i]->name, (const char*) content, 0, 0);
 				xmlFree(content);
 			}
 		}
@@ -960,7 +978,9 @@ IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_ne
 	tmp_response->headers = plist_new_dict();
 	tmp_response->fields = plist_new_dict();
 	tmp_response->fields_require_input = plist_new_dict();
+	tmp_response->fields_secure_input = plist_new_dict();
 	tmp_response->labels = plist_new_dict();
+	tmp_response->labels_placeholder = plist_new_dict();
 	tmp_response->is_activation_ack = 0;
 	tmp_response->is_auth_required = 0;
 	tmp_response->has_errors = 0;
@@ -1037,7 +1057,9 @@ IDEVICE_ACTIVATION_API void idevice_activation_response_free(idevice_activation_
 	plist_free(response->headers);
 	plist_free(response->fields);
 	plist_free(response->fields_require_input);
+	plist_free(response->fields_secure_input);
 	plist_free(response->labels);
+	plist_free(response->labels_placeholder);
 	free(response);
 }
 
@@ -1068,6 +1090,18 @@ IDEVICE_ACTIVATION_API void idevice_activation_response_get_label(idevice_activa
 
 	*value = NULL;
 	plist_t item = plist_dict_get_item(response->labels, key);
+	if (item) {
+		plist_get_string_val(item, value);
+	}
+}
+
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_placeholder(idevice_activation_response_t response, const char* key, char** value)
+{
+	if (!response || !key || !value)
+		return;
+
+	*value = NULL;
+	plist_t item = plist_dict_get_item(response->labels_placeholder, key);
 	if (item) {
 		plist_get_string_val(item, value);
 	}
@@ -1131,6 +1165,14 @@ IDEVICE_ACTIVATION_API int idevice_activation_response_field_requires_input(idev
 		return 0;
 
 	return (plist_dict_get_item(response->fields_require_input, key) ? 1 : 0);
+}
+
+IDEVICE_ACTIVATION_API int idevice_activation_response_field_secure_input(idevice_activation_response_t response, const char* key)
+{
+	if (!response || !key)
+		return 0;
+
+	return (plist_dict_get_item(response->fields_secure_input, key) ? 1 : 0);
 }
 
 IDEVICE_ACTIVATION_API int idevice_activation_response_has_errors(idevice_activation_response_t response)

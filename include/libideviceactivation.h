@@ -79,6 +79,7 @@ void idevice_activation_response_free(idevice_activation_response_t response);
 void idevice_activation_response_get_field(idevice_activation_response_t response, const char* key, char** value);
 void idevice_activation_response_get_fields(idevice_activation_response_t response, plist_t* fields);
 void idevice_activation_response_get_label(idevice_activation_response_t response, const char* key, char** value);
+void idevice_activation_response_get_placeholder(idevice_activation_response_t response, const char* key, char **value);
 
 void idevice_activation_response_get_title(idevice_activation_response_t response, const char** title);
 void idevice_activation_response_get_description(idevice_activation_response_t response, const char** description);
@@ -88,6 +89,7 @@ void idevice_activation_response_get_headers(idevice_activation_response_t respo
 int idevice_activation_response_is_activation_acknowledged(idevice_activation_response_t response);
 int idevice_activation_response_is_authentication_required(idevice_activation_response_t response);
 int idevice_activation_response_field_requires_input(idevice_activation_response_t response, const char* key);
+int idevice_activation_response_field_secure_input(idevice_activation_response_t response, const char* key);
 int idevice_activation_response_has_errors(idevice_activation_response_t response);
 
 idevice_activation_error_t idevice_activation_send_request(idevice_activation_request_t request, idevice_activation_response_t* response);
