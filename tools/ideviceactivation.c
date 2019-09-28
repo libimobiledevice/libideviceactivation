@@ -30,6 +30,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
+#ifndef WIN32
+#include <signal.h>
+#endif
 
 #include <plist/plist.h>
 #include <libimobiledevice/lockdown.h>
@@ -137,6 +140,9 @@ int main(int argc, char *argv[])
 	} op_t;
 	op_t op = OP_NONE;
 
+#ifndef WIN32
+	signal(SIGPIPE, SIG_IGN);
+#endif
 	/* parse cmdline args */
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--debug")) {
