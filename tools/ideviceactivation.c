@@ -50,15 +50,18 @@
 static void print_usage(int argc, char **argv)
 {
 	char *name = NULL;
-	
+
 	name = strrchr(argv[0], '/');
 	printf("Usage: %s COMMAND [OPTIONS]\n", (name ? name + 1: argv[0]));
-	printf("Activate or deactivate a device.\n\n");
+	printf("\n");
+	printf("Activate or deactivate a device.\n");
+	printf("\n");
 	printf("Where COMMAND is one of:\n");
 	printf("  activate\t\tattempt to activate the device\n");
 	printf("  deactivate\t\tdeactivate the device\n");
 	printf("  state\t\t\tquery device about its activation state\n");
-	printf("\nThe following OPTIONS are accepted:\n");
+	printf("\n");
+	printf("The following OPTIONS are accepted:\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
 	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
 	printf("  -b, --batch\t\texplicitly run in non-interactive mode (default: auto-detect)\n");
@@ -66,7 +69,8 @@ static void print_usage(int argc, char **argv)
 	printf("  -v, --version\t\tprint version information and exit\n");
 	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
-	printf("Homepage: <http://libimobiledevice.org>\n");
+	printf("Homepage:    <" PACKAGE_URL ">\n");
+	printf("Bug Reports: <" PACKAGE_BUGREPORT ">\n");
 }
 
 #ifdef WIN32
