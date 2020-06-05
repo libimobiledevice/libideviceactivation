@@ -64,7 +64,7 @@ static void print_usage(int argc, char **argv)
 	printf("The following OPTIONS are accepted:\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
 	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
-	printf("  -n, --network\t\tconnect to network device even if available via USB\n");
+	printf("  -n, --network\t\tconnect to network device\n");
 	printf("  -b, --batch\t\texplicitly run in non-interactive mode (default: auto-detect)\n");
 	printf("  -s, --service URL\tuse activation webservice at URL instead of default\n");
 	printf("  -v, --version\t\tprint version information and exit\n");
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 	int i;
 	int interactive = 1;
 	int result = EXIT_FAILURE;
-	enum idevice_options lookup_opts = IDEVICE_LOOKUP_USBMUX | IDEVICE_LOOKUP_NETWORK;
+	int use_network = 0;
 
 	typedef enum {
 		OP_NONE = 0, OP_ACTIVATE, OP_DEACTIVATE, OP_GETSTATE
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		else if (!strcmp(argv[i], "-n") || !strcmp(argv[i], "--network")) {
-			lookup_opts |= IDEVICE_LOOKUP_PREFER_NETWORK;
+			use_network = 1;
 			continue;
 		}
 		else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--service")) {
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	ret = idevice_new_with_options(&device, udid, lookup_opts);
+	ret = idevice_new_with_options(&device, udid, (use_network) ? IDEVICE_LOOKUP_NETWORK : IDEVICE_LOOKUP_USBMUX);
 	if (ret != IDEVICE_E_SUCCESS) {
 		if (udid) {
 			printf("ERROR: Device %s not found!\n", udid);
