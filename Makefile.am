@@ -2,6 +2,9 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src include tools man
 
+EXTRA_DIST = \
+	README.md
+
 DISTCHECK_CONFIGURE_FLAGS =
 
 indent:
