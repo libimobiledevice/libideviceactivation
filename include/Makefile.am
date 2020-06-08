@@ -1,1 +1,2 @@
-nobase_include_HEADERS = libideviceactivation.h
+nobase_include_HEADERS = \
+	libideviceactivation.h

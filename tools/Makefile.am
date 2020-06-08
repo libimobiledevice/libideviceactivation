@@ -1,7 +1,15 @@
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/include
 
-AM_CFLAGS = $(GLOBAL_CFLAGS) $(libimobiledevice_CFLAGS) $(libplist_CFLAGS)
-AM_LDFLAGS = $(GLOBAL_LIBS) $(libimobiledevice_LIBS) $(libplist_LIBS)
+AM_CFLAGS = \
+	$(GLOBAL_CFLAGS) \
+	$(libimobiledevice_CFLAGS) \
+	$(libplist_CFLAGS)
+
+AM_LDFLAGS = \
+	$(GLOBAL_LIBS) \
+	$(libimobiledevice_LIBS) \
+	$(libplist_LIBS)
 
 bin_PROGRAMS = ideviceactivation
 
