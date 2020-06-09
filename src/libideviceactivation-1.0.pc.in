@@ -8,5 +8,5 @@ Description: A library to handle activation and deactivation of iOS devices.
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} -lideviceactivation
 Cflags: -I${includedir}
-Requires: libplist >= @LIBPLIST_VERSION@ libimobiledevice-1.0 >= @LIBIMOBILEDEVICE_VERSION@
+Requires: libplist-2.0 >= @LIBPLIST_VERSION@ libimobiledevice-1.0 >= @LIBIMOBILEDEVICE_VERSION@
 Requires.private: libcurl >= @LIBCURL_VERSION@ libxml-2.0 >= @LIBXML2_VERSION@
