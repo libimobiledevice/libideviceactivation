@@ -8,6 +8,8 @@ This project provides an interface to activate and deactivate iOS devices by
 talking to Apple's webservice alongside a command-line utility named
 `ideviceactivation`.
 
+Some key features are:
+
 - **Status:** Implements complete activation and deactivation process
 - **Compatibility**: Supports legacy and latest activation webservice APIs
 - **Utility:** Provides `ideviceactivation` utility for command-line usage
