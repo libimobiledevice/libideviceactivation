@@ -16,4 +16,4 @@ bin_PROGRAMS = ideviceactivation
 ideviceactivation_SOURCES = ideviceactivation.c
 ideviceactivation_CFLAGS = $(AM_CFLAGS)
 ideviceactivation_LDFLAGS = $(AM_LDFLAGS)
-ideviceactivation_LDADD = $(top_builddir)/src/libideviceactivation.la
+ideviceactivation_LDADD = $(top_builddir)/src/libideviceactivation-1.0.la

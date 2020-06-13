@@ -15,13 +15,13 @@ AM_LDFLAGS = \
 	$(libcurl_LIBS) \
 	$(libxml2_LIBS)
 
-lib_LTLIBRARIES = libideviceactivation.la
-libideviceactivation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBIDEVICEACTIVATION_SO_VERSION) -no-undefined
-libideviceactivation_la_SOURCES = \
+lib_LTLIBRARIES = libideviceactivation-1.0.la
+libideviceactivation_1_0_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBIDEVICEACTIVATION_SO_VERSION) -no-undefined
+libideviceactivation_1_0_la_SOURCES = \
 		activation.c
 
 if WIN32
-libideviceactivation_la_LDFLAGS += -avoid-version
+libideviceactivation_1_0_la_LDFLAGS += -avoid-version
 endif
 
 pkgconfigdir = $(libdir)/pkgconfig
