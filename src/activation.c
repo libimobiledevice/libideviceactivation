@@ -44,6 +44,7 @@
 
 #ifdef WIN32
 #include <windows.h>
+#define strncasecmp _strnicmp
 #else
 #include <pthread.h>
 #endif
