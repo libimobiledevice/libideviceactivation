@@ -597,13 +597,13 @@ static size_t idevice_activation_header_callback(void *data, size_t size, size_t
 		}
 		if (value) {
 			if (strncasecmp(header, "Content-Type", 12) == 0) {
-				if (strcmp(value, "text/xml") == 0) {
+				if (strncasecmp(value, "text/xml", 8) == 0) {
 					response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
-				} else if (strcmp(value, "application/xml") == 0) {
+				} else if (strncasecmp(value, "application/xml", 15) == 0) {
 					response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_PLIST;
-				} else if (strcmp(value, "application/x-buddyml") == 0) {
+				} else if (strncasecmp(value, "application/x-buddyml", 21) == 0) {
 					response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_BUDDYML;
-				} else if (strcmp(value, "text/html") == 0) {
+				} else if (strncasecmp(value, "text/html", 9) == 0) {
 					response->content_type = IDEVICE_ACTIVATION_CONTENT_TYPE_HTML;
 				}
 			}
