@@ -35,6 +35,10 @@ sudo apt-get install \
 	libcurl4-openssl-dev \
 	usbmuxd
 ```
+### Arch Linux
+```shell
+sudo pacman -S --noconfirm base-devel git usbmuxd
+```
 
 Then clone the actual project repository:
 ```shell
