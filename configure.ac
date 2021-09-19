@@ -73,6 +73,24 @@ case ${host_os} in
 esac
 AM_CONDITIONAL(WIN32, test x$win32 = xtrue)
 
+# Check if the C compiler supports __attribute__((constructor))
+AC_CACHE_CHECK([wether the C compiler supports constructor/destructor attributes],
+  ac_cv_attribute_constructor, [
+  ac_cv_attribute_constructor=no
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+    [[
+      static void __attribute__((constructor)) test_constructor(void) {
+      }
+      static void __attribute__((destructor)) test_destructor(void) {
+      }
+    ]], [])],
+    [ac_cv_attribute_constructor=yes]
+  )]
+)
+if test "$ac_cv_attribute_constructor" = "yes"; then
+  AC_DEFINE(HAVE_ATTRIBUTE_CONSTRUCTOR, 1, [Define if the C compiler supports constructor/destructor attributes])
+fi
+
 AS_COMPILER_FLAGS(GLOBAL_CFLAGS, "-Wall -Wextra -Wmissing-declarations -Wredundant-decls -Wshadow -Wpointer-arith  -Wwrite-strings -Wswitch-default -Wno-unused-parameter -fsigned-char -fvisibility=hidden")
 AC_SUBST(GLOBAL_CFLAGS)
 
