@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.64)
+AC_PREREQ(2.68)
 AC_INIT([libideviceactivation], [1.1.2], [https://github.com/libimobiledevice/libideviceactivation/issues],, [https://libimobiledevice.org])
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip check-news])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
@@ -31,9 +31,9 @@ AC_SUBST(LIBXML2_VERSION)
 
 # Checks for programs.
 AC_PROG_CC
-AC_PROG_CXX
+#AC_PROG_CXX
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT
 
 # Checks for libraries.
 PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= $LIBIMOBILEDEVICE_VERSION)
@@ -42,7 +42,6 @@ PKG_CHECK_MODULES(libcurl, libcurl >= $LIBCURL_VERSION)
 PKG_CHECK_MODULES(libxml2, libxml-2.0 >= $LIBXML2_VERSION)
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS([stdint.h stdlib.h string.h sys/socket.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -57,17 +56,17 @@ AC_TYPE_UINT8_T
 AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
 
 # Check for operating system
-AC_MSG_CHECKING([wether we need platform-specific build settings for ${host_os}])
+AC_MSG_CHECKING([for platform-specific build settings])
 case ${host_os} in
   *mingw32*|*cygwin*)
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT([${host_os}])
     win32=true
     ;;
   darwin*|*android*)
-    AC_MSG_RESULT([no])
+    AC_MSG_RESULT([${host_os}])
     ;;
   *)
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT([${host_os}])
     AX_PTHREAD([], [AC_MSG_ERROR([pthread is required to build ${PACKAGE}])])
     AC_CHECK_LIB(pthread, [pthread_once], [], [AC_MSG_ERROR([pthread with pthread_once required to build ${PACKAGE}])])
     ;;
@@ -84,7 +83,7 @@ esac
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 src/Makefile
 src/libideviceactivation-1.0.pc
@@ -92,6 +91,7 @@ include/Makefile
 tools/Makefile
 man/Makefile
 ])
+AC_OUTPUT
 
 echo "
 Configuration for $PACKAGE $VERSION:
