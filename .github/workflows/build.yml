@@ -1,0 +1,240 @@
+name: build
+
+on: [push]
+
+jobs:
+  build-linux-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - name: install dependencies
+      run: |
+          sudo apt-get update
+          sudo apt-get install libcurl4-openssl-dev libxml2-dev
+    - name: prepare environment
+      run: |
+          echo "target_triplet=`gcc -dumpmachine`" >> $GITHUB_ENV
+    - name: fetch libplist
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libplist-latest_${{env.target_triplet}}
+        repo: libimobiledevice/libplist
+    - name: fetch libusbmuxd
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libusbmuxd-latest_${{env.target_triplet}}
+        repo: libimobiledevice/libusbmuxd
+    - name: fetch libimobiledevice-glue
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libimobiledevice-glue-latest_${{env.target_triplet}}
+        repo: libimobiledevice/libimobiledevice-glue
+    - name: fetch libimobiledevice
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libimobiledevice-latest_${{env.target_triplet}}
+        repo: libimobiledevice/libimobiledevice
+    - name: install external dependencies
+      run: |
+          mkdir extract
+          for I in *.tar; do
+            tar -C extract -xvf $I
+          done
+          rm -rf extract/lib
+          sudo cp -r extract/* /
+          sudo ldconfig
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: autogen
+      run: ./autogen.sh PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+    - name: make
+      run: make
+    - name: make install
+      run: sudo make install
+    - name: prepare artifact
+      run: |
+          mkdir -p dest
+          DESTDIR=`pwd`/dest make install
+          tar -C dest -cf libideviceactivation.tar usr
+    - name: publish artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: libideviceactivation-latest_${{env.target_triplet}}
+        path: libideviceactivation.tar
+  build-macOS:
+    runs-on: macOS-latest
+    steps:
+    - name: install dependencies
+      run: |
+          if test -x "`which port`"; then
+            sudo port install libtool autoconf automake pkgconfig
+          else
+            brew install libtool autoconf automake pkgconfig
+          fi
+      shell: bash
+    - name: fetch libplist
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libplist-latest_macOS
+        repo: libimobiledevice/libplist
+    - name: fetch libusbmuxd
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libusbmuxd-latest_macOS
+        repo: libimobiledevice/libusbmuxd
+    - name: fetch libimobiledevice-glue
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libimobiledevice-glue-latest_macOS
+        repo: libimobiledevice/libimobiledevice-glue
+    - name: fetch libimobiledevice
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libimobiledevice-latest_macOS
+        repo: libimobiledevice/libimobiledevice
+    - name: install external dependencies
+      run: |
+          mkdir extract
+          for I in *.tar; do
+            tar -C extract -xvf $I
+          done
+          sudo cp -r extract/* /
+    - uses: actions/checkout@v2
+    - name: install additional requirements
+      run: |
+          SDKDIR=`xcrun --sdk macosx --show-sdk-path 2>/dev/null`
+          echo "SDKDIR=$SDKDIR" >> $GITHUB_ENV
+          TESTARCHS="arm64 x86_64"
+          USEARCHS=
+          for ARCH in $TESTARCHS; do
+            if echo "int main(int argc, char **argv) { return 0; }" |clang -arch $ARCH -o /dev/null -isysroot $SDKDIR -x c - 2>/dev/null; then
+              USEARCHS="$USEARCHS -arch $ARCH"
+            fi
+          done
+          export CFLAGS="$USEARCHS -isysroot $SDKDIR"
+          echo "Using CFLAGS: $CFLAGS"
+          echo "BUILD_CFLAGS=$CFLAGS" >> $GITHUB_ENV
+    - name: autogen
+      run: |
+          export CFLAGS="${{env.BUILD_CFLAGS}} -Wno-nullability-completeness -Wno-expansion-to-defined"
+          echo "Using CFLAGS: $CFLAGS"
+          ./autogen.sh PKG_CONFIG_PATH=/usr/local/lib/pkgconfig \
+              libcurl_CFLAGS="-I${{env.SDKDIR}}/usr/include" libcurl_LIBS="-lcurl" \
+              libxml2_CFLAGS="-I${{env.SDKDIR}}/usr/include" libxml2_LIBS="-lxml2" \
+              libimobiledevice_CFLAGS="-I/usr/local/include" libimobiledevice_LIBS="-L/usr/local/lib -limobiledevice-1.0"
+    - name: make
+      run: make
+    - name: make install
+      run: sudo make install
+    - name: prepare artifact
+      run: |
+          mkdir -p dest
+          DESTDIR=`pwd`/dest make install
+          tar -C dest -cf libideviceactivation.tar usr
+    - name: publish artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: libideviceactivation-latest_macOS
+        path: libideviceactivation.tar
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: [
+          { msystem: MINGW64, arch: x86_64 },
+          { msystem: MINGW32, arch: i686   }
+        ]
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.msystem }}
+        release: false
+        update: false
+        install: >-
+          base-devel
+          git
+          mingw-w64-${{ matrix.arch }}-gcc
+          make
+          libtool
+          autoconf
+          automake-wrapper
+    - name: prepare environment
+      run: |
+          dest=`echo ${{ matrix.msystem }} |tr [:upper:] [:lower:]`
+          echo "dest=$dest" >> $GITHUB_ENV
+          echo "target_triplet=`gcc -dumpmachine`" >> $GITHUB_ENV
+    - name: fetch libplist
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libplist-latest_${{ matrix.arch }}-${{ env.dest }}
+        repo: libimobiledevice/libplist
+    - name: fetch libusbmuxd
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libusbmuxd-latest_${{ matrix.arch }}-${{ env.dest }}
+        repo: libimobiledevice/libusbmuxd
+    - name: fetch libimobiledevice-glue
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libimobiledevice-glue-latest_${{ matrix.arch }}-${{ env.dest }}
+        repo: libimobiledevice/libimobiledevice-glue
+    - name: fetch libimobiledevice
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: build.yml
+        name: libimobiledevice-latest_${{ matrix.arch }}-${{ env.dest }}
+        repo: libimobiledevice/libimobiledevice
+    - name: install external dependencies
+      run: |
+          mkdir extract
+          for I in *.tar; do
+            tar -C extract -xvf $I
+          done
+          cp -r extract/* /
+    - uses: actions/checkout@v2
+    - name: install additional requirements
+      run: |
+          #
+    - name: autogen
+      run: ./autogen.sh CC=gcc CXX=g++
+    - name: make
+      run: make
+    - name: make install
+      run: make install
+    - name: prepare artifact
+      run: |
+          mkdir -p dest
+          DESTDIR=`pwd`/dest make install
+          tar -C dest -cf libideviceactivation.tar ${{ env.dest }}
+    - name: publish artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: libideviceactivation-latest_${{ matrix.arch }}-${{ env.dest }}
+        path: libideviceactivation.tar
