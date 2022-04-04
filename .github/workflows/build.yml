@@ -153,7 +153,7 @@ jobs:
         name: libideviceactivation-latest_macOS
         path: libideviceactivation.tar
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2019
     defaults:
       run:
         shell: msys2 {0}
