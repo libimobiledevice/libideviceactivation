@@ -51,7 +51,7 @@
 
 #include <libideviceactivation.h>
 
-#define IDEVICE_ACTIVATION_USER_AGENT_IOS "iOS Device Activator (MobileActivation-20 built on Jan 15 2012 at 19:07:28)"
+#define IDEVICE_ACTIVATION_USER_AGENT_IOS "iOS Device Activator (MobileActivation-592.103.2)"
 #define IDEVICE_ACTIVATION_USER_AGENT_ITUNES "iTunes/11.1.4 (Macintosh; OS X 10.9.1) AppleWebKit/537.73.11"
 #define IDEVICE_ACTIVATION_DEFAULT_URL "https://albert.apple.com/deviceservices/deviceActivation"
 #define IDEVICE_ACTIVATION_DRM_HANDSHAKE_DEFAULT_URL "https://albert.apple.com/deviceservices/drmHandshake"
