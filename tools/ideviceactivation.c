@@ -336,7 +336,11 @@ int main(int argc, char *argv[])
 					plist_free(blob);
 
 					/* send request to server and get response */
-					idevice_activation_send_request(request, &response);
+					if (idevice_activation_send_request(request, &response) != IDEVICE_ACTIVATION_E_SUCCESS) {
+						fprintf(stderr, "Failed to get drmHandshake result from activation server.\n");
+						result = EXIT_FAILURE;
+						goto cleanup;
+					}
 					plist_t handshake_response = NULL;
 					idevice_activation_response_get_fields(response, &handshake_response);
 					idevice_activation_response_free(response);
