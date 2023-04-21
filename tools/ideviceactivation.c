@@ -335,6 +335,10 @@ int main(int argc, char *argv[])
 					idevice_activation_request_set_fields(request, blob);
 					plist_free(blob);
 
+					if (signing_service_url) {
+						idevice_activation_request_set_url(request, signing_service_url);
+					}
+
 					/* send request to server and get response */
 					if (idevice_activation_send_request(request, &response) != IDEVICE_ACTIVATION_E_SUCCESS) {
 						fprintf(stderr, "Failed to get drmHandshake result from activation server.\n");
