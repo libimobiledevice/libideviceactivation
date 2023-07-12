@@ -60,6 +60,7 @@ static void print_usage(int argc, char **argv)
 	printf("  activate\t\tattempt to activate the device\n");
 	printf("  deactivate\t\tdeactivate the device\n");
 	printf("  state\t\t\tquery device about its activation state\n");
+	printf("  itunes\t\ttell the device that it has been connected to iTunes (useful for < iOS 4)\n");
 	printf("\n");
 	printf("The following OPTIONS are accepted:\n");
 	printf("  -d, --debug\t\tenable communication debugging\n");
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
 	int use_network = 0;
 
 	typedef enum {
-		OP_NONE = 0, OP_ACTIVATE, OP_DEACTIVATE, OP_GETSTATE
+		OP_NONE = 0, OP_ACTIVATE, OP_DEACTIVATE, OP_GETSTATE, OP_ITUNES
 	} op_t;
 	op_t op = OP_NONE;
 
@@ -200,6 +201,10 @@ int main(int argc, char *argv[])
 		}
 		else if (!strcmp(argv[i], "state")) {
 			op = OP_GETSTATE;
+			continue;
+		}
+		else if (!strcmp(argv[i], "itunes")) {
+			op = OP_ITUNES;
 			continue;
 		}
 		else {
@@ -600,6 +605,18 @@ int main(int argc, char *argv[])
 			} else {
 				printf("Error getting activation state.\n");
 			}
+			}
+			break;
+
+		case OP_ITUNES: {
+			// set iTunesHasConnected if we succeeded
+			if (LOCKDOWN_E_SUCCESS != lockdownd_set_value(lockdown, NULL, "iTunesHasConnected", plist_new_bool(1))) {
+				fprintf(stderr, "Failed to set iTunesHasConnected on device.\n");
+				result = EXIT_FAILURE;
+				goto cleanup;
+			}
+			result = EXIT_SUCCESS;
+			printf("Successfully set 'iTunesHasConnected'.\n");
 			}
 			break;
 	}
