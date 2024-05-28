@@ -56,7 +56,7 @@ sudo make install
 
 To query the activation status of a device use:
 ```shell
-ideviceactivation status
+ideviceactivation state
 ```
 
 To activate a device use:
