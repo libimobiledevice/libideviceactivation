@@ -54,9 +54,9 @@ sudo make install
 
 ## Usage
 
-To query the activation status of a device use:
+To query the activation state of a device use:
 ```shell
-ideviceactivation status
+ideviceactivation state
 ```
 
 To activate a device use:
@@ -118,4 +118,4 @@ iPadOS, tvOS, watchOS, and macOS are trademarks of Apple Inc.
 This project is an independent software library and has not been authorized,
 sponsored, or otherwise approved by Apple Inc.
 
-README Updated on: 2022-04-04
+README Updated on: 2024-05-29
