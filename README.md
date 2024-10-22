@@ -93,8 +93,8 @@ We are still working on the guidelines so bear with us!
 ## Links
 
 * Homepage: https://libimobiledevice.org/
-* Repository: https://git.libimobiledevice.org/libideviceactivation.git
-* Repository (Mirror): https://github.com/libimobiledevice/libideviceactivation.git
+* Repository: https://github.com/libimobiledevice/libideviceactivation.git
+* Repository (Mirror): https://git.libimobiledevice.org/libideviceactivation.git
 * Issue Tracker: https://github.com/libimobiledevice/libideviceactivation/issues
 * Mailing List: https://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
 * Twitter: https://twitter.com/libimobiledev
@@ -118,4 +118,4 @@ iPadOS, tvOS, watchOS, and macOS are trademarks of Apple Inc.
 This project is an independent software library and has not been authorized,
 sponsored, or otherwise approved by Apple Inc.
 
-README Updated on: 2024-05-29
+README Updated on: 2024-10-22
