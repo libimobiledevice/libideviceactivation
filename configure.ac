@@ -61,6 +61,7 @@ case ${host_os} in
   *mingw32*|*cygwin*)
     AC_MSG_RESULT([${host_os}])
     win32=true
+    deplibs_check_method='pass_all'
     ;;
   darwin*|*android*)
     AC_MSG_RESULT([${host_os}])
