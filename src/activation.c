@@ -45,11 +45,36 @@
 #ifdef WIN32
 #include <windows.h>
 #define strncasecmp _strnicmp
-#else
-#include <pthread.h>
 #endif
 
 #include <libideviceactivation.h>
+
+// Reference: https://stackoverflow.com/a/2390626/1806760
+// Initializer/finalizer sample for MSVC and GCC/Clang.
+// 2010-2016 Joe Lowe. Released into the public domain.
+
+#ifdef __cplusplus
+    #define INITIALIZER(f) \
+        static void f(void); \
+        struct f##_t_ { f##_t_(void) { f(); } }; static f##_t_ f##_; \
+        static void f(void)
+#elif defined(_MSC_VER)
+    #pragma section(".CRT$XCU",read)
+    #define INITIALIZER2_(f,p) \
+        static void f(void); \
+        __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+        __pragma(comment(linker,"/include:" p #f "_")) \
+        static void f(void)
+    #ifdef _WIN64
+        #define INITIALIZER(f) INITIALIZER2_(f,"")
+    #else
+        #define INITIALIZER(f) INITIALIZER2_(f,"_")
+    #endif
+#else
+    #define INITIALIZER(f) \
+        static void f(void) __attribute__((__constructor__)); \
+        static void f(void)
+#endif
 
 #define IDEVICE_ACTIVATION_USER_AGENT_IOS "iOS Device Activator (MobileActivation-592.103.2)"
 #define IDEVICE_ACTIVATION_USER_AGENT_ITUNES "iTunes/11.1.4 (Macintosh; OS X 10.9.1) AppleWebKit/537.73.11"
@@ -90,77 +115,16 @@ struct idevice_activation_response_private {
 	int has_errors;
 };
 
-
-static void internal_libideviceactivation_init(void)
-{
-	curl_global_init(CURL_GLOBAL_ALL);
-}
-
 static void internal_libideviceactivation_deinit(void)
 {
 	curl_global_cleanup();
 }
 
-#ifdef WIN32
-typedef volatile struct {
-    LONG lock;
-    int state;
-} thread_once_t;
-
-static thread_once_t init_once = {0, 0};
-static thread_once_t deinit_once = {0, 0};
-
-static void thread_once(thread_once_t *once_control, void (*init_routine)(void))
+INITIALIZER(internal_libideviceactivation_init)
 {
-    while (InterlockedExchange(&(once_control->lock), 1) != 0) {
-        Sleep(1);
-    }
-    if (!once_control->state) {
-        once_control->state = 1;
-        init_routine();
-    }
-    InterlockedExchange(&(once_control->lock), 0);
+	curl_global_init(CURL_GLOBAL_ALL);
+	atexit(internal_libideviceactivation_deinit);
 }
-#else
-static pthread_once_t init_once = PTHREAD_ONCE_INIT;
-static pthread_once_t deinit_once = PTHREAD_ONCE_INIT;
-#define thread_once pthread_once
-#endif
-
-#ifndef HAVE_ATTRIBUTE_CONSTRUCTOR
-  #if defined(__llvm__) || defined(__GNUC__)
-    #define HAVE_ATTRIBUTE_CONSTRUCTOR
-  #endif
-#endif
-
-#ifdef HAVE_ATTRIBUTE_CONSTRUCTOR
-static void __attribute__((constructor)) libideviceactivation_initialize(void)
-{
-    thread_once(&init_once, internal_libideviceactivation_init);
-}
-
-static void __attribute__((destructor)) libideviceactivation_deinitialize(void)
-{
-    thread_once(&deinit_once, internal_libideviceactivation_deinit);
-}
-#elif defined(WIN32)
-BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwReason, LPVOID lpReserved)
-{
-    switch (dwReason) {
-    case DLL_PROCESS_ATTACH:
-        thread_once(&init_once, internal_libideviceactivation_init);
-        break;
-    case DLL_PROCESS_DETACH:
-        thread_once(&deinit_once, internal_libideviceactivation_deinit);
-        break;
-    default:
-        break;
-    }
-    return 1;
-}
-#else
-#warning No compiler support for constructor/destructor attributes, some features might not be available.
-#endif
 
 static int debug_level = 0;
 
