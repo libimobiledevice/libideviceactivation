@@ -32,7 +32,7 @@
 #include <libxml/HTMLtree.h>
 #include <curl/curl.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #define IDEVICE_ACTIVATION_API __declspec( dllexport )
 #else
 #ifdef HAVE_FVISIBILITY
@@ -42,7 +42,7 @@
 #endif
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #define strncasecmp _strnicmp
 #endif

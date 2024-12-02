@@ -30,7 +30,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <signal.h>
 #endif
 
@@ -40,7 +40,7 @@
 #include <libimobiledevice/mobileactivation.h>
 #include <libideviceactivation.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #include <conio.h>
 #else
@@ -74,7 +74,7 @@ static void print_usage(int argc, char **argv)
 	printf("Bug Reports: <" PACKAGE_BUGREPORT ">\n");
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #define BS_CC '\b'
 #define my_getch getch
 #else
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 	} op_t;
 	op_t op = OP_NONE;
 
-#ifndef WIN32
+#ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN);
 #endif
 	/* parse cmdline args */
