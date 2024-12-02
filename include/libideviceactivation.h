@@ -31,6 +31,16 @@ extern "C" {
 #include <libimobiledevice/lockdown.h>
 #include <plist/plist.h>
 
+#ifndef IDEVICE_ACTIVATION_API
+  #ifdef IDEVICE_ACTIVATION_STATIC
+    #define IDEVICE_ACTIVATION_API
+  #elif defined(_WIN32)
+    #define IDEVICE_ACTIVATION_API __declspec(dllimport)
+  #else
+    #define IDEVICE_ACTIVATION_API
+  #endif
+#endif
+
 typedef enum {
 	IDEVICE_ACTIVATION_E_SUCCESS                =  0,
 	IDEVICE_ACTIVATION_E_INCOMPLETE_INFO        = -1,
@@ -55,44 +65,44 @@ typedef idevice_activation_response* idevice_activation_response_t;
 
 /* Interface */
 
-void idevice_activation_set_debug_level(int level);
+IDEVICE_ACTIVATION_API void idevice_activation_set_debug_level(int level);
 
-idevice_activation_error_t idevice_activation_request_new(idevice_activation_client_type_t activation_type, idevice_activation_request_t* request);
-idevice_activation_error_t idevice_activation_request_new_from_lockdownd(idevice_activation_client_type_t activation_type, lockdownd_client_t lockdown, idevice_activation_request_t* request);
-idevice_activation_error_t idevice_activation_drm_handshake_request_new(idevice_activation_client_type_t client_type, idevice_activation_request_t* request);
-void idevice_activation_request_free(idevice_activation_request_t request);
+IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new(idevice_activation_client_type_t activation_type, idevice_activation_request_t* request);
+IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_request_new_from_lockdownd(idevice_activation_client_type_t activation_type, lockdownd_client_t lockdown, idevice_activation_request_t* request);
+IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_drm_handshake_request_new(idevice_activation_client_type_t client_type, idevice_activation_request_t* request);
+IDEVICE_ACTIVATION_API void idevice_activation_request_free(idevice_activation_request_t request);
 
-void idevice_activation_request_get_fields(idevice_activation_request_t request, plist_t* fields);
-void idevice_activation_request_set_fields(idevice_activation_request_t request, plist_t fields);
-void idevice_activation_request_set_fields_from_response(idevice_activation_request_t request, const idevice_activation_response_t response);
-void idevice_activation_request_set_field(idevice_activation_request_t request, const char* key, const char* value);
-void idevice_activation_request_get_field(idevice_activation_request_t request, const char* key, char** value);
+IDEVICE_ACTIVATION_API void idevice_activation_request_get_fields(idevice_activation_request_t request, plist_t* fields);
+IDEVICE_ACTIVATION_API void idevice_activation_request_set_fields(idevice_activation_request_t request, plist_t fields);
+IDEVICE_ACTIVATION_API void idevice_activation_request_set_fields_from_response(idevice_activation_request_t request, const idevice_activation_response_t response);
+IDEVICE_ACTIVATION_API void idevice_activation_request_set_field(idevice_activation_request_t request, const char* key, const char* value);
+IDEVICE_ACTIVATION_API void idevice_activation_request_get_field(idevice_activation_request_t request, const char* key, char** value);
 
-void idevice_activation_request_get_url(idevice_activation_request_t request, const char** url);
-void idevice_activation_request_set_url(idevice_activation_request_t request, const char* url);
+IDEVICE_ACTIVATION_API void idevice_activation_request_get_url(idevice_activation_request_t request, const char** url);
+IDEVICE_ACTIVATION_API void idevice_activation_request_set_url(idevice_activation_request_t request, const char* url);
 
-idevice_activation_error_t idevice_activation_response_new(idevice_activation_response_t* response);
-idevice_activation_error_t idevice_activation_response_new_from_html(const char* content, idevice_activation_response_t* response);
-idevice_activation_error_t idevice_activation_response_to_buffer(idevice_activation_response_t response, char** buffer, size_t* size);
-void idevice_activation_response_free(idevice_activation_response_t response);
+IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_new(idevice_activation_response_t* response);
+IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_new_from_html(const char* content, idevice_activation_response_t* response);
+IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_response_to_buffer(idevice_activation_response_t response, char** buffer, size_t* size);
+IDEVICE_ACTIVATION_API void idevice_activation_response_free(idevice_activation_response_t response);
 
-void idevice_activation_response_get_field(idevice_activation_response_t response, const char* key, char** value);
-void idevice_activation_response_get_fields(idevice_activation_response_t response, plist_t* fields);
-void idevice_activation_response_get_label(idevice_activation_response_t response, const char* key, char** value);
-void idevice_activation_response_get_placeholder(idevice_activation_response_t response, const char* key, char **value);
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_field(idevice_activation_response_t response, const char* key, char** value);
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_fields(idevice_activation_response_t response, plist_t* fields);
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_label(idevice_activation_response_t response, const char* key, char** value);
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_placeholder(idevice_activation_response_t response, const char* key, char **value);
 
-void idevice_activation_response_get_title(idevice_activation_response_t response, const char** title);
-void idevice_activation_response_get_description(idevice_activation_response_t response, const char** description);
-void idevice_activation_response_get_activation_record(idevice_activation_response_t response, plist_t* activation_record);
-void idevice_activation_response_get_headers(idevice_activation_response_t response, plist_t* headers);
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_title(idevice_activation_response_t response, const char** title);
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_description(idevice_activation_response_t response, const char** description);
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_activation_record(idevice_activation_response_t response, plist_t* activation_record);
+IDEVICE_ACTIVATION_API void idevice_activation_response_get_headers(idevice_activation_response_t response, plist_t* headers);
 
-int idevice_activation_response_is_activation_acknowledged(idevice_activation_response_t response);
-int idevice_activation_response_is_authentication_required(idevice_activation_response_t response);
-int idevice_activation_response_field_requires_input(idevice_activation_response_t response, const char* key);
-int idevice_activation_response_field_secure_input(idevice_activation_response_t response, const char* key);
-int idevice_activation_response_has_errors(idevice_activation_response_t response);
+IDEVICE_ACTIVATION_API int idevice_activation_response_is_activation_acknowledged(idevice_activation_response_t response);
+IDEVICE_ACTIVATION_API int idevice_activation_response_is_authentication_required(idevice_activation_response_t response);
+IDEVICE_ACTIVATION_API int idevice_activation_response_field_requires_input(idevice_activation_response_t response, const char* key);
+IDEVICE_ACTIVATION_API int idevice_activation_response_field_secure_input(idevice_activation_response_t response, const char* key);
+IDEVICE_ACTIVATION_API int idevice_activation_response_has_errors(idevice_activation_response_t response);
 
-idevice_activation_error_t idevice_activation_send_request(idevice_activation_request_t request, idevice_activation_response_t* response);
+IDEVICE_ACTIVATION_API idevice_activation_error_t idevice_activation_send_request(idevice_activation_request_t request, idevice_activation_response_t* response);
 
 #ifdef __cplusplus
 }
