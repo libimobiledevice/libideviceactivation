@@ -157,7 +157,7 @@ jobs:
         name: libideviceactivation-latest_macOS
         path: libideviceactivation.tar
   build-windows:
-    runs-on: windows-2019
+    runs-on: windows-latest
     defaults:
       run:
         shell: msys2 {0}
@@ -178,6 +178,9 @@ jobs:
           base-devel
           git
           mingw-w64-${{ matrix.arch }}-gcc
+          mingw-w64-${{ matrix.arch }}-pkg-config
+          mingw-w64-${{ matrix.arch }}-openssl
+          mingw-w64-${{ matrix.arch }}-libxml2
           make
           libtool
           autoconf
@@ -225,9 +228,15 @@ jobs:
     - uses: actions/checkout@v4
     - name: install additional requirements
       run: |
-          #
+          mkdir deps
+          FILENAME="libcurl-8.1.0-static.tar.bz2"
+          curl -o $FILENAME.b64 -Ls "https://gist.github.com/nikias/6c397a0a2f4f4eafd91b81cccd22b761/raw/85216e60af6787f3b351291165eb91bd585ff09a/libcurl-8.1.0-static-${{matrix.arch}}-${{env.dest}}.tar.bz2"
+          base64 -d < $FILENAME.b64 > $FILENAME
+          tar -C deps -xjf $FILENAME
+          echo "LIBCURL_CFLAGS=-I`pwd`/deps/include -DCURL_STATICLIB" >> $GITHUB_ENV
+          echo "LIBCURL_LIBS=-Xlinker `pwd`/deps/lib/libcurl.a -Xlinker /${{env.dest}}/lib/libzstd.a -Xlinker /${{env.dest}}/lib/libz.a -Xlinker -lws2_32 -Xlinker -lcrypt32 -Xlinker -lwldap32 -Xlinker -lbcrypt -Xlinker -lssl -Xlinker -lcrypto" >> $GITHUB_ENV
     - name: autogen
-      run: ./autogen.sh CC=gcc CXX=g++
+      run: ./autogen.sh libcurl_CFLAGS="${{env.LIBCURL_CFLAGS}}" libcurl_LIBS="${{env.LIBCURL_LIBS}}"
     - name: make
       run: make
     - name: make install
