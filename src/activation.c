@@ -1306,6 +1306,10 @@ idevice_activation_error_t idevice_activation_send_request(idevice_activation_re
 	curl_easy_setopt(handle, CURLOPT_FORBID_REUSE, 1);
 	curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
 
+	// Added timeouts, default was 300 sec
+	curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, 10L); // 10 sec
+    curl_easy_setopt(handle, CURLOPT_TIMEOUT, 20L);        // 20 sec total
+
 	// enable communication debugging
 	if (debug_level > 0) {
 		curl_easy_setopt(handle, CURLOPT_VERBOSE, 1);
