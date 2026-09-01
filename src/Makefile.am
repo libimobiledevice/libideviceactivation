@@ -4,6 +4,7 @@ AM_CPPFLAGS = \
 AM_CFLAGS = \
 	$(GLOBAL_CFLAGS) \
 	$(libimobiledevice_CFLAGS) \
+	$(libimobiledevice_glue_CFLAGS) \
 	$(libplist_CFLAGS) \
 	$(libcurl_CFLAGS) \
 	$(libxml2_CFLAGS)
@@ -11,6 +12,7 @@ AM_CFLAGS = \
 AM_LDFLAGS = \
 	$(GLOBAL_LIBS) \
 	$(libimobiledevice_LIBS) \
+	$(libimobiledevice_glue_LIBS) \
 	$(libplist_LIBS) \
 	$(libcurl_LIBS) \
 	$(libxml2_LIBS)
