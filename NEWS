@@ -1,3 +1,25 @@
+Version 1.2.0
+~~~~~~~~~~~~~
+
+* Changes:
+  - Add an "itunes" command to the ideviceactivation tool, which gets iOS 3
+    devices out of the "connect to iTunes" screen
+  - Update the UserAgent string to a more recent MobileActivation version
+  - Use the custom signing service URL for the drmHandshake request too
+  - Move IDEVICE_ACTIVATION_API to the public header
+  - Use the constructor attribute on Windows in favor of DllMain
+  - Derive the version number automatically from the latest git tag
+  - Prevent "dist" and "distcheck" when uncommitted changes are present
+  - Update deprecated autoconf macros and the m4 files
+
+* Bug Fixes:
+  - Treat header field names as case-insensitive
+  - Treat the type, subtype and parameter name tokens of the Content-Type
+    header as case-insensitive
+  - Bail out if the drmHandshake request fails
+  - Define strncasecmp as _strnicmp on Windows
+
+
 Version 1.1.1
 ~~~~~~~~~~~~~
 
