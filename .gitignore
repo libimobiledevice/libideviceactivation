@@ -29,3 +29,4 @@ src/.libs
 tools/.libs
 tools/ideviceactivation
 stamp-h1
+*.exe
